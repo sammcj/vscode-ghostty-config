@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: 'ghostty-config/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: ghostty-config
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: ghostty-config
+        run: pnpm run lint
+
+      - name: Compile
+        working-directory: ghostty-config
+        run: pnpm run compile
+
+      - name: Test
+        working-directory: ghostty-config
+        run: pnpm test

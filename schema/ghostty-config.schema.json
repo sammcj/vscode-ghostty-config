@@ -1,0 +1,1065 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Ghostty terminal configuration schema",
+  "repeatableKeys": [
+    "font-family",
+    "font-family-bold",
+    "font-family-italic",
+    "font-family-bold-italic",
+    "font-feature",
+    "font-variation",
+    "font-variation-bold",
+    "font-variation-italic",
+    "font-variation-bold-italic",
+    "font-codepoint-map",
+    "palette",
+    "keybind",
+    "env",
+    "input",
+    "shell-integration-features",
+    "config-file",
+    "command-palette-entry"
+  ],
+  "options": {
+    "alpha-blending": {
+      "type": "enum",
+      "description": "Configuration for alpha blending in different colour spaces. Affects text and image transparency rendering.",
+      "enum": ["native", "linear", "linear-corrected"],
+      "examples": ["native", "linear"]
+    },
+    "background": {
+      "type": "color",
+      "description": "Background colour of the terminal window.",
+      "examples": ["#282c34", "#000000", "black"]
+    },
+    "foreground": {
+      "type": "color",
+      "description": "Foreground (text) colour of the terminal window.",
+      "examples": ["#ffffff", "#c6d0f5", "white"]
+    },
+    "selection-foreground": {
+      "type": "color",
+      "description": "Text colour for selected text. Special values: cell-foreground, cell-background.",
+      "examples": ["#ffffff", "cell-foreground"]
+    },
+    "selection-background": {
+      "type": "color",
+      "description": "Background colour for selected text. Special values: cell-foreground, cell-background.",
+      "examples": ["#626880", "cell-background"]
+    },
+    "selection-invert-fg-bg": {
+      "type": "boolean",
+      "description": "Whether to invert foreground and background colours for selection.",
+      "examples": ["true", "false"]
+    },
+    "selection-clear-on-typing": {
+      "type": "boolean",
+      "description": "Whether to clear selection when typing.",
+      "examples": ["true", "false"]
+    },
+    "selection-clear-on-copy": {
+      "type": "boolean",
+      "description": "Whether to clear selection after copying.",
+      "examples": ["true", "false"]
+    },
+    "minimum-contrast": {
+      "type": "number",
+      "description": "Minimum contrast ratio for text readability (WCAG 2.0 standard).",
+      "minimum": 1,
+      "maximum": 21,
+      "examples": ["1.0", "4.5"]
+    },
+    "palette": {
+      "type": "string",
+      "description": "Set colours in the 256-colour palette. Format: N=colour where N is 0-255.",
+      "repeatable": true,
+      "examples": ["0=#1d2021", "1=#cc241d", "15=#fbf1c7"]
+    },
+    "cursor-color": {
+      "type": "color",
+      "description": "Colour of the cursor. Special values: cell-foreground, cell-background.",
+      "examples": ["#f2d5cf", "cell-foreground"]
+    },
+    "cursor-invert-fg-bg": {
+      "type": "boolean",
+      "description": "Whether to invert foreground and background colours for cursor.",
+      "examples": ["true", "false"]
+    },
+    "cursor-opacity": {
+      "type": "number",
+      "description": "Opacity of the cursor.",
+      "minimum": 0,
+      "maximum": 1,
+      "examples": ["1.0", "0.8"]
+    },
+    "cursor-text": {
+      "type": "color",
+      "description": "Text colour under the cursor. Special values: cell-foreground, cell-background.",
+      "examples": ["#c6d0f5", "cell-background"]
+    },
+    "cursor-style": {
+      "type": "enum",
+      "description": "Style of the cursor.",
+      "enum": ["block", "bar", "underline", "block_hollow"],
+      "examples": ["block", "bar"]
+    },
+    "cursor-style-blink": {
+      "type": "boolean",
+      "description": "Whether the cursor should blink. Unset follows DEC mode 12.",
+      "examples": ["true", "false"]
+    },
+    "cursor-click-to-move": {
+      "type": "boolean",
+      "description": "Whether clicking moves the cursor. Requires shell integration.",
+      "examples": ["true", "false"]
+    },
+    "font-family": {
+      "type": "string",
+      "description": "Font family for regular text. Can be specified multiple times for fallbacks.",
+      "repeatable": true,
+      "examples": ["JetBrains Mono", "Fira Code", "Menlo"]
+    },
+    "font-family-bold": {
+      "type": "string",
+      "description": "Font family for bold text.",
+      "repeatable": true,
+      "examples": ["JetBrains Mono Bold"]
+    },
+    "font-family-italic": {
+      "type": "string",
+      "description": "Font family for italic text.",
+      "repeatable": true,
+      "examples": ["JetBrains Mono Italic"]
+    },
+    "font-family-bold-italic": {
+      "type": "string",
+      "description": "Font family for bold italic text.",
+      "repeatable": true,
+      "examples": ["JetBrains Mono Bold Italic"]
+    },
+    "font-size": {
+      "type": "number",
+      "description": "Font size in points.",
+      "minimum": 1,
+      "examples": ["12", "14", "16"]
+    },
+    "font-style": {
+      "type": "string",
+      "description": "Font style for regular text.",
+      "examples": ["normal", "italic"]
+    },
+    "font-style-bold": {
+      "type": "string",
+      "description": "Font style for bold text. Set to false to disable.",
+      "examples": ["normal", "false"]
+    },
+    "font-style-italic": {
+      "type": "string",
+      "description": "Font style for italic text. Set to false to disable.",
+      "examples": ["italic", "false"]
+    },
+    "font-style-bold-italic": {
+      "type": "string",
+      "description": "Font style for bold italic text. Set to false to disable.",
+      "examples": ["italic", "false"]
+    },
+    "font-synthetic-style": {
+      "type": "enum",
+      "description": "Whether to use synthetic font styles when the font doesn't provide them.",
+      "enum": ["true", "false", "no-bold", "no-italic", "no-bold-italic"],
+      "examples": ["true", "false"]
+    },
+    "font-feature": {
+      "type": "string",
+      "description": "OpenType font feature settings.",
+      "repeatable": true,
+      "examples": ["+calt", "-liga", "ss01"]
+    },
+    "font-variation": {
+      "type": "string",
+      "description": "Font variation axis settings for variable fonts.",
+      "repeatable": true,
+      "examples": ["wght=400", "wdth=100"]
+    },
+    "font-variation-bold": {
+      "type": "string",
+      "description": "Font variation axis settings for bold text.",
+      "repeatable": true,
+      "examples": ["wght=700"]
+    },
+    "font-variation-italic": {
+      "type": "string",
+      "description": "Font variation axis settings for italic text.",
+      "repeatable": true,
+      "examples": ["slnt=-15"]
+    },
+    "font-variation-bold-italic": {
+      "type": "string",
+      "description": "Font variation axis settings for bold italic text.",
+      "repeatable": true,
+      "examples": ["wght=700", "slnt=-15"]
+    },
+    "font-codepoint-map": {
+      "type": "string",
+      "description": "Map codepoint ranges to specific fonts.",
+      "repeatable": true,
+      "examples": ["U+E0A0-U+E0B3=Symbols Nerd Font"]
+    },
+    "font-thicken": {
+      "type": "boolean",
+      "description": "Whether to thicken fonts for better readability.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "font-thicken-strength": {
+      "type": "number",
+      "description": "Strength of font thickening.",
+      "minimum": 0,
+      "maximum": 255,
+      "platforms": ["macos"],
+      "examples": ["100", "200"]
+    },
+    "font-shaping-break": {
+      "type": "enum",
+      "description": "Where to break text shaping runs.",
+      "enum": ["cursor"],
+      "examples": ["cursor"]
+    },
+    "freetype-load-flags": {
+      "type": "enum",
+      "description": "FreeType font loading flags.",
+      "enum": ["hinting", "force-autohint", "monochrome", "autohint"],
+      "examples": ["hinting"]
+    },
+    "adjust-cell-width": {
+      "type": "percentage",
+      "description": "Adjustment to cell width in pixels or percentage.",
+      "examples": ["0", "1", "5%"]
+    },
+    "adjust-cell-height": {
+      "type": "percentage",
+      "description": "Adjustment to cell height in pixels or percentage.",
+      "examples": ["0", "1", "5%"]
+    },
+    "adjust-font-baseline": {
+      "type": "percentage",
+      "description": "Adjustment to font baseline. Positive = UP, negative = DOWN.",
+      "examples": ["0", "1", "-1"]
+    },
+    "adjust-underline-position": {
+      "type": "percentage",
+      "description": "Adjustment to underline position. Positive = DOWN, negative = UP.",
+      "examples": ["0", "1", "-1"]
+    },
+    "adjust-underline-thickness": {
+      "type": "percentage",
+      "description": "Adjustment to underline thickness. Minimum clamped to 1px.",
+      "examples": ["0", "1", "50%"]
+    },
+    "adjust-strikethrough-position": {
+      "type": "percentage",
+      "description": "Adjustment to strikethrough position.",
+      "examples": ["0", "1", "-1"]
+    },
+    "adjust-strikethrough-thickness": {
+      "type": "percentage",
+      "description": "Adjustment to strikethrough thickness.",
+      "examples": ["0", "1", "50%"]
+    },
+    "adjust-overline-position": {
+      "type": "percentage",
+      "description": "Adjustment to overline position.",
+      "examples": ["0", "1", "-1"]
+    },
+    "adjust-overline-thickness": {
+      "type": "percentage",
+      "description": "Adjustment to overline thickness.",
+      "examples": ["0", "1", "50%"]
+    },
+    "adjust-cursor-thickness": {
+      "type": "percentage",
+      "description": "Adjustment to cursor thickness for bar/outlined cursors.",
+      "examples": ["0", "1", "50%"]
+    },
+    "adjust-cursor-height": {
+      "type": "percentage",
+      "description": "Adjustment to cursor height.",
+      "examples": ["0", "1", "50%"]
+    },
+    "adjust-box-thickness": {
+      "type": "percentage",
+      "description": "Adjustment to box drawing character thickness.",
+      "examples": ["0", "1", "50%"]
+    },
+    "adjust-icon-height": {
+      "type": "percentage",
+      "description": "Adjustment to icon height. Default is 1.2x capital letter height.",
+      "examples": ["0", "1", "50%"]
+    },
+    "theme": {
+      "type": "theme",
+      "description": "Built-in theme name, custom theme path, or light/dark combination.",
+      "examples": ["auto", "Catppuccin Mocha", "light:Catppuccin Latte,dark:Catppuccin Mocha"]
+    },
+    "background-image": {
+      "type": "path",
+      "description": "Path to background image. PNG or JPEG only.",
+      "examples": ["~/Pictures/wallpaper.png"]
+    },
+    "background-image-opacity": {
+      "type": "number",
+      "description": "Opacity of background image, relative to background-opacity.",
+      "minimum": 0,
+      "maximum": 1,
+      "examples": ["0.5", "1.0"]
+    },
+    "background-image-position": {
+      "type": "enum",
+      "description": "Position of background image.",
+      "enum": ["top-left", "top-center", "top-right", "center-left", "center", "center-right", "bottom-left", "bottom-center", "bottom-right"],
+      "examples": ["center", "top-left"]
+    },
+    "background-image-fit": {
+      "type": "enum",
+      "description": "How to fit the background image.",
+      "enum": ["contain", "cover", "stretch", "none"],
+      "examples": ["cover", "contain"]
+    },
+    "background-image-repeat": {
+      "type": "boolean",
+      "description": "Whether to repeat the background image.",
+      "examples": ["true", "false"]
+    },
+    "background-opacity": {
+      "type": "number",
+      "description": "Background opacity. Values outside 0-1 are clamped.",
+      "minimum": 0,
+      "maximum": 1,
+      "examples": ["1.0", "0.9", "0.8"]
+    },
+    "background-opacity-cells": {
+      "type": "boolean",
+      "description": "Apply opacity to cells with explicit background colour.",
+      "examples": ["true", "false"]
+    },
+    "background-blur": {
+      "type": "number",
+      "description": "Background blur intensity (0-255). Ignored on some compositors.",
+      "minimum": 0,
+      "maximum": 255,
+      "examples": ["0", "20", "50"]
+    },
+    "window-padding-x": {
+      "type": "string",
+      "description": "Horizontal padding in points. Format: single value or left,right.",
+      "examples": ["10", "10,20"]
+    },
+    "window-padding-y": {
+      "type": "string",
+      "description": "Vertical padding in points. Format: single value or top,bottom.",
+      "examples": ["10", "10,20"]
+    },
+    "window-padding-balance": {
+      "type": "boolean",
+      "description": "Whether to balance extra padding across edges.",
+      "examples": ["true", "false"]
+    },
+    "window-padding-color": {
+      "type": "enum",
+      "description": "Colour of the window padding area.",
+      "enum": ["background", "extend", "extend-always"],
+      "examples": ["background", "extend"]
+    },
+    "window-vsync": {
+      "type": "boolean",
+      "description": "Whether to enable vertical synchronisation.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "window-inherit-working-directory": {
+      "type": "boolean",
+      "description": "Whether new windows inherit the working directory.",
+      "examples": ["true", "false"]
+    },
+    "window-inherit-font-size": {
+      "type": "boolean",
+      "description": "Whether new windows inherit the font size.",
+      "examples": ["true", "false"]
+    },
+    "window-decoration": {
+      "type": "enum",
+      "description": "Type of window decorations.",
+      "enum": ["auto", "none", "client", "server"],
+      "examples": ["auto", "none"]
+    },
+    "window-title-font-family": {
+      "type": "string",
+      "description": "Font family for window title.",
+      "platforms": ["linux"],
+      "examples": ["System Font", "Sans"]
+    },
+    "window-subtitle": {
+      "type": "enum",
+      "description": "Subtitle format for the window.",
+      "enum": ["false", "working-directory"],
+      "platforms": ["linux"],
+      "examples": ["false", "working-directory"]
+    },
+    "window-theme": {
+      "type": "enum",
+      "description": "Theme for window decorations.",
+      "enum": ["auto", "system", "light", "dark", "ghostty"],
+      "examples": ["auto", "dark", "ghostty"]
+    },
+    "window-colorspace": {
+      "type": "enum",
+      "description": "Colour space for the window.",
+      "enum": ["srgb", "display-p3"],
+      "platforms": ["macos"],
+      "examples": ["srgb", "display-p3"]
+    },
+    "window-height": {
+      "type": "number",
+      "description": "Initial window height in cells. Minimum 4.",
+      "minimum": 4,
+      "examples": ["24", "30", "40"]
+    },
+    "window-width": {
+      "type": "number",
+      "description": "Initial window width in cells. Minimum 10.",
+      "minimum": 10,
+      "examples": ["80", "120", "160"]
+    },
+    "window-position-x": {
+      "type": "number",
+      "description": "Initial window X position in pixels.",
+      "platforms": ["macos"],
+      "examples": ["100", "200"]
+    },
+    "window-position-y": {
+      "type": "number",
+      "description": "Initial window Y position in pixels.",
+      "platforms": ["macos"],
+      "examples": ["100", "200"]
+    },
+    "window-save-state": {
+      "type": "enum",
+      "description": "Whether to save window state between sessions.",
+      "enum": ["default", "never", "always"],
+      "platforms": ["macos"],
+      "examples": ["default", "never"]
+    },
+    "window-step-resize": {
+      "type": "boolean",
+      "description": "Whether to resize in cell-sized increments.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "window-new-tab-position": {
+      "type": "enum",
+      "description": "Position for new tabs.",
+      "enum": ["current", "end"],
+      "examples": ["current", "end"]
+    },
+    "window-show-tab-bar": {
+      "type": "enum",
+      "description": "When to show the tab bar.",
+      "enum": ["always", "auto", "never"],
+      "platforms": ["linux"],
+      "examples": ["auto", "always"]
+    },
+    "window-titlebar-background": {
+      "type": "color",
+      "description": "Background colour of window titlebar. Requires window-theme = ghostty.",
+      "platforms": ["linux"],
+      "examples": ["#282c34"]
+    },
+    "window-titlebar-foreground": {
+      "type": "color",
+      "description": "Foreground colour of window titlebar. Requires window-theme = ghostty.",
+      "platforms": ["linux"],
+      "examples": ["#ffffff"]
+    },
+    "maximize": {
+      "type": "boolean",
+      "description": "Whether to maximise the window on startup.",
+      "examples": ["true", "false"]
+    },
+    "fullscreen": {
+      "type": "boolean",
+      "description": "Whether to start in fullscreen mode.",
+      "examples": ["true", "false"]
+    },
+    "title": {
+      "type": "string",
+      "description": "Force window title. Spaces hide the title.",
+      "examples": ["Ghostty", " "]
+    },
+    "class": {
+      "type": "string",
+      "description": "Window class name for X11/Wayland.",
+      "platforms": ["linux"],
+      "examples": ["Ghostty", "Terminal"]
+    },
+    "x11-instance-name": {
+      "type": "string",
+      "description": "X11 WM_CLASS instance field.",
+      "platforms": ["linux"],
+      "examples": ["ghostty"]
+    },
+    "keybind": {
+      "type": "keybind",
+      "description": "Keyboard binding. Format: [prefix:]trigger=action[:param]. Use keybind=clear to remove all defaults.",
+      "repeatable": true,
+      "examples": ["ctrl+c=copy_to_clipboard", "ctrl+a>n=new_window", "global:ctrl+`=toggle_quick_terminal"]
+    },
+    "mouse-hide-while-typing": {
+      "type": "boolean",
+      "description": "Whether to hide mouse cursor while typing.",
+      "examples": ["true", "false"]
+    },
+    "mouse-shift-capture": {
+      "type": "enum",
+      "description": "Whether shift+click captures mouse events.",
+      "enum": ["true", "false", "always", "never"],
+      "examples": ["true", "false"]
+    },
+    "mouse-scroll-multiplier": {
+      "type": "number",
+      "description": "Scroll speed multiplier for mouse wheel.",
+      "minimum": 0.01,
+      "maximum": 10000,
+      "examples": ["1.0", "3.0"]
+    },
+    "focus-follows-mouse": {
+      "type": "boolean",
+      "description": "Whether focus follows mouse pointer in multi-pane windows.",
+      "examples": ["true", "false"]
+    },
+    "copy-on-select": {
+      "type": "enum",
+      "description": "Whether to copy text on selection.",
+      "enum": ["true", "false", "clipboard"],
+      "examples": ["true", "false", "clipboard"]
+    },
+    "right-click-action": {
+      "type": "enum",
+      "description": "Action for right-click.",
+      "enum": ["context-menu", "paste", "copy", "copy-or-paste", "ignore"],
+      "examples": ["context-menu", "paste"]
+    },
+    "click-repeat-interval": {
+      "type": "number",
+      "description": "Interval for click repeat detection in milliseconds. 0 = platform default.",
+      "examples": ["0", "300", "500"]
+    },
+    "command": {
+      "type": "string",
+      "description": "Command to run in the terminal. Supports arguments.",
+      "examples": ["bash", "zsh", "/bin/sh -l"]
+    },
+    "initial-command": {
+      "type": "string",
+      "description": "Initial command for first terminal only.",
+      "examples": ["htop", "neofetch"]
+    },
+    "wait-after-command": {
+      "type": "boolean",
+      "description": "Keep terminal open after command exits.",
+      "examples": ["true", "false"]
+    },
+    "abnormal-command-exit-runtime": {
+      "type": "duration",
+      "description": "How long to keep terminal open after abnormal command exit.",
+      "examples": ["2s", "5000ms"]
+    },
+    "scrollback-limit": {
+      "type": "number",
+      "description": "Size of scrollback buffer in bytes.",
+      "examples": ["10000000", "50000000"]
+    },
+    "working-directory": {
+      "type": "string",
+      "description": "Initial working directory. Special values: home, inherit.",
+      "examples": ["~", "/home/user", "home", "inherit"]
+    },
+    "term": {
+      "type": "string",
+      "description": "TERM environment variable value.",
+      "examples": ["xterm-256color", "xterm-ghostty"]
+    },
+    "enquiry-response": {
+      "type": "string",
+      "description": "Response to ENQ character.",
+      "examples": ["Ghostty"]
+    },
+    "bold-is-bright": {
+      "type": "boolean",
+      "description": "Whether bold text uses bright colours.",
+      "examples": ["true", "false"]
+    },
+    "grapheme-width-method": {
+      "type": "enum",
+      "description": "Method for calculating grapheme width.",
+      "enum": ["unicode", "legacy"],
+      "examples": ["unicode", "legacy"]
+    },
+    "env": {
+      "type": "string",
+      "description": "Set environment variable. Format: KEY=VALUE. Empty value removes key.",
+      "repeatable": true,
+      "examples": ["EDITOR=vim", "LC_ALL="]
+    },
+    "input": {
+      "type": "string",
+      "description": "Input data to send to terminal. Formats: raw:string, path:filepath.",
+      "repeatable": true,
+      "examples": ["raw:hello", "path:~/.config/script.txt"]
+    },
+    "clipboard-read": {
+      "type": "enum",
+      "description": "Whether to allow reading from clipboard.",
+      "enum": ["ask", "allow", "deny"],
+      "examples": ["allow", "ask"]
+    },
+    "clipboard-write": {
+      "type": "enum",
+      "description": "Whether to allow writing to clipboard.",
+      "enum": ["ask", "allow", "deny"],
+      "examples": ["allow", "ask"]
+    },
+    "clipboard-trim-trailing-spaces": {
+      "type": "boolean",
+      "description": "Whether to trim trailing spaces when copying.",
+      "examples": ["true", "false"]
+    },
+    "clipboard-paste-protection": {
+      "type": "boolean",
+      "description": "Require confirmation for unsafe pastes.",
+      "examples": ["true", "false"]
+    },
+    "clipboard-paste-bracketed-safe": {
+      "type": "boolean",
+      "description": "Whether to use safe bracketed paste mode.",
+      "examples": ["true", "false"]
+    },
+    "link-url": {
+      "type": "boolean",
+      "description": "Whether to enable URL link detection.",
+      "examples": ["true", "false"]
+    },
+    "link-previews": {
+      "type": "enum",
+      "description": "Whether to show link previews.",
+      "enum": ["true", "false", "osc8"],
+      "examples": ["true", "false"]
+    },
+    "config-file": {
+      "type": "path",
+      "description": "Path to additional configuration file. Prefix with ? to suppress errors if missing.",
+      "repeatable": true,
+      "examples": ["~/.config/ghostty/local.conf", "?./optional.conf"]
+    },
+    "config-default-files": {
+      "type": "boolean",
+      "description": "Whether to load default configuration files. CLI-only.",
+      "examples": ["true", "false"]
+    },
+    "confirm-close-surface": {
+      "type": "enum",
+      "description": "Whether to confirm before closing surfaces.",
+      "enum": ["true", "false", "always"],
+      "examples": ["true", "false"]
+    },
+    "quit-after-last-window-closed": {
+      "type": "boolean",
+      "description": "Whether to quit after last window is closed.",
+      "examples": ["true", "false"]
+    },
+    "quit-after-last-window-closed-delay": {
+      "type": "duration",
+      "description": "Delay before quitting after last window closed. Minimum 1s.",
+      "platforms": ["linux"],
+      "examples": ["1s", "5s"]
+    },
+    "initial-window": {
+      "type": "boolean",
+      "description": "Whether to create initial window on startup.",
+      "examples": ["true", "false"]
+    },
+    "command-palette-entry": {
+      "type": "string",
+      "description": "Custom command palette entry. Format: title:X,action:Y,description:Z.",
+      "repeatable": true,
+      "examples": ["title:My Command,action:text:hello"]
+    },
+    "resize-overlay": {
+      "type": "enum",
+      "description": "Whether to show resize overlay.",
+      "enum": ["always", "never", "after-first"],
+      "examples": ["always", "never"]
+    },
+    "resize-overlay-position": {
+      "type": "enum",
+      "description": "Position of resize overlay.",
+      "enum": ["center", "top-left", "top-center", "top-right", "bottom-left", "bottom-center", "bottom-right"],
+      "examples": ["center", "top-right"]
+    },
+    "resize-overlay-duration": {
+      "type": "duration",
+      "description": "Duration to show resize overlay.",
+      "examples": ["750ms", "1s"]
+    },
+    "quick-terminal-position": {
+      "type": "enum",
+      "description": "Position of quick terminal.",
+      "enum": ["top", "bottom", "left", "right", "center"],
+      "examples": ["top", "bottom"]
+    },
+    "quick-terminal-size": {
+      "type": "string",
+      "description": "Size of quick terminal. Format: percentage, pixels, or both.",
+      "examples": ["20%", "300px", "20%,500px"]
+    },
+    "quick-terminal-screen": {
+      "type": "enum",
+      "description": "Screen to show quick terminal on.",
+      "enum": ["main", "mouse", "macos-menu-bar"],
+      "platforms": ["macos"],
+      "examples": ["main", "mouse"]
+    },
+    "quick-terminal-animation-duration": {
+      "type": "number",
+      "description": "Duration of quick terminal animation in seconds. 0 = disabled.",
+      "platforms": ["macos"],
+      "examples": ["0", "0.2"]
+    },
+    "quick-terminal-autohide": {
+      "type": "boolean",
+      "description": "Whether to auto-hide quick terminal when losing focus.",
+      "examples": ["true", "false"]
+    },
+    "quick-terminal-space-behavior": {
+      "type": "enum",
+      "description": "Behaviour of quick terminal in spaces/desktops.",
+      "enum": ["move", "remain"],
+      "platforms": ["macos"],
+      "examples": ["move", "remain"]
+    },
+    "quick-terminal-keyboard-interactivity": {
+      "type": "enum",
+      "description": "Keyboard interactivity mode for quick terminal.",
+      "enum": ["none", "on-demand", "exclusive"],
+      "platforms": ["linux"],
+      "examples": ["on-demand", "exclusive"]
+    },
+    "gtk-quick-terminal-layer": {
+      "type": "enum",
+      "description": "Wayland layer for quick terminal.",
+      "enum": ["overlay", "top", "bottom", "background"],
+      "platforms": ["linux"],
+      "examples": ["overlay", "top"]
+    },
+    "gtk-quick-terminal-namespace": {
+      "type": "string",
+      "description": "Namespace identifier for Wayland compositor.",
+      "platforms": ["linux"],
+      "examples": ["ghostty-quick"]
+    },
+    "undo-timeout": {
+      "type": "duration",
+      "description": "Duration for undo operations. 0 = disabled.",
+      "platforms": ["macos"],
+      "examples": ["5s", "0"]
+    },
+    "shell-integration": {
+      "type": "enum",
+      "description": "Shell integration mode.",
+      "enum": ["none", "detect", "bash", "elvish", "fish", "zsh"],
+      "examples": ["detect", "fish", "none"]
+    },
+    "shell-integration-features": {
+      "type": "string",
+      "description": "Shell integration features to enable/disable.",
+      "repeatable": true,
+      "examples": ["cursor", "sudo", "title", "ssh-env", "ssh-terminfo", "no-cursor"]
+    },
+    "title-report": {
+      "type": "boolean",
+      "description": "Whether to allow title reporting (security risk).",
+      "examples": ["true", "false"]
+    },
+    "image-storage-limit": {
+      "type": "number",
+      "description": "Limit for image storage in bytes. Max 4GiB, 0 = disabled.",
+      "examples": ["320000000", "0"]
+    },
+    "osc-color-report-format": {
+      "type": "enum",
+      "description": "Format for OSC colour reports.",
+      "enum": ["8-bit", "16-bit"],
+      "examples": ["8-bit", "16-bit"]
+    },
+    "vt-kam-allowed": {
+      "type": "boolean",
+      "description": "Whether VT KAM sequence is allowed.",
+      "examples": ["true", "false"]
+    },
+    "custom-shader": {
+      "type": "path",
+      "description": "Path to custom GLSL shader file.",
+      "examples": ["~/.config/ghostty/shader.glsl"]
+    },
+    "custom-shader-animation": {
+      "type": "boolean",
+      "description": "Whether to enable shader animation.",
+      "examples": ["true", "false"]
+    },
+    "app-notifications": {
+      "type": "string",
+      "description": "Application notifications to enable.",
+      "examples": ["clipboard-copy", "no-clipboard-copy"]
+    },
+    "desktop-notifications": {
+      "type": "boolean",
+      "description": "Whether to enable desktop notifications.",
+      "examples": ["true", "false"]
+    },
+    "split-divider-color": {
+      "type": "color",
+      "description": "Colour of split dividers. Auto-chosen if not set.",
+      "examples": ["#444444", "#626880"]
+    },
+    "unfocused-split-opacity": {
+      "type": "number",
+      "description": "Opacity of unfocused splits.",
+      "minimum": 0.15,
+      "maximum": 1,
+      "examples": ["1.0", "0.8", "0.5"]
+    },
+    "unfocused-split-fill": {
+      "type": "color",
+      "description": "Fill colour for unfocused splits. Defaults to background.",
+      "examples": ["#000000"]
+    },
+    "scroll-to-bottom": {
+      "type": "enum",
+      "description": "When to scroll to bottom automatically.",
+      "enum": ["keystroke", "output"],
+      "examples": ["keystroke"]
+    },
+    "macos-non-native-fullscreen": {
+      "type": "boolean",
+      "description": "Whether to use non-native fullscreen on macOS.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "macos-titlebar-style": {
+      "type": "enum",
+      "description": "Style of titlebar on macOS.",
+      "enum": ["native", "transparent", "tabs", "hidden"],
+      "platforms": ["macos"],
+      "examples": ["native", "transparent", "tabs"]
+    },
+    "macos-titlebar-proxy-icon": {
+      "type": "boolean",
+      "description": "Whether to show proxy icon in titlebar.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "macos-option-as-alt": {
+      "type": "boolean",
+      "description": "Whether to treat option key as alt.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "macos-window-shadow": {
+      "type": "boolean",
+      "description": "Whether to show window shadow.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "macos-auto-secure-input": {
+      "type": "boolean",
+      "description": "Whether to auto-enable secure input.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "macos-secure-input-indication": {
+      "type": "boolean",
+      "description": "Whether to show secure input indication.",
+      "platforms": ["macos"],
+      "examples": ["true", "false"]
+    },
+    "macos-icon": {
+      "type": "enum",
+      "description": "Icon style for macOS app.",
+      "enum": ["official", "blueprint", "chalkboard", "microchip", "glass", "holographic", "paper", "retro", "xray", "custom-style"],
+      "platforms": ["macos"],
+      "examples": ["official", "blueprint"]
+    },
+    "macos-icon-frame": {
+      "type": "enum",
+      "description": "Frame material for custom macOS icon.",
+      "enum": ["aluminum", "beige", "plastic", "chrome"],
+      "platforms": ["macos"],
+      "examples": ["aluminum", "beige"]
+    },
+    "macos-icon-ghost-color": {
+      "type": "color",
+      "description": "Ghost colour for custom macOS icon.",
+      "platforms": ["macos"],
+      "examples": ["#ffffff", "#000000"]
+    },
+    "macos-icon-screen-color": {
+      "type": "color",
+      "description": "Screen colour for custom macOS icon.",
+      "platforms": ["macos"],
+      "examples": ["#00ff00", "#ffffff"]
+    },
+    "linux-cgroup": {
+      "type": "string",
+      "description": "Linux cgroup configuration (v1 or v2).",
+      "platforms": ["linux"],
+      "examples": ["v2", "v1"]
+    },
+    "linux-cgroup-memory-limit": {
+      "type": "number",
+      "description": "Memory limit for Linux cgroup.",
+      "platforms": ["linux"],
+      "examples": ["100000000", "50000000"]
+    },
+    "linux-cgroup-processes-limit": {
+      "type": "number",
+      "description": "Process limit for Linux cgroup.",
+      "platforms": ["linux"],
+      "examples": ["100", "50"]
+    },
+    "linux-cgroup-hard-fail": {
+      "type": "boolean",
+      "description": "Whether to hard fail on Linux cgroup errors.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "gtk-opengl-debug": {
+      "type": "boolean",
+      "description": "Whether to enable OpenGL debugging in GTK.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "gtk-gsk-renderer": {
+      "type": "string",
+      "description": "GSK renderer to use in GTK.",
+      "platforms": ["linux"],
+      "examples": ["gl", "cairo"]
+    },
+    "gtk-single-instance": {
+      "type": "boolean",
+      "description": "Whether to use single instance mode in GTK.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "gtk-titlebar": {
+      "type": "boolean",
+      "description": "Whether to show titlebar in GTK.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "gtk-tabs-location": {
+      "type": "enum",
+      "description": "Location of tabs in GTK.",
+      "enum": ["top", "bottom", "left", "right"],
+      "platforms": ["linux"],
+      "examples": ["top", "bottom"]
+    },
+    "gtk-titlebar-hide-when-maximized": {
+      "type": "boolean",
+      "description": "Whether to hide titlebar when maximised in GTK.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "adw-toolbar-style": {
+      "type": "enum",
+      "description": "Adwaita toolbar style.",
+      "enum": ["flat", "raised", "raised-border"],
+      "platforms": ["linux"],
+      "examples": ["flat", "raised"]
+    },
+    "gtk-wide-tabs": {
+      "type": "boolean",
+      "description": "Whether to use wide tabs in GTK.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "gtk-adwaita": {
+      "type": "boolean",
+      "description": "Whether to use Adwaita theme in GTK.",
+      "platforms": ["linux"],
+      "examples": ["true", "false"]
+    },
+    "gtk-custom-css": {
+      "type": "path",
+      "description": "Path to custom CSS file for GTK.",
+      "platforms": ["linux"],
+      "examples": ["~/.config/ghostty/custom.css"]
+    },
+    "auto-update": {
+      "type": "enum",
+      "description": "Automatic update behaviour.",
+      "enum": ["off", "check", "download"],
+      "examples": ["off", "check"]
+    },
+    "auto-update-channel": {
+      "type": "enum",
+      "description": "Update channel to use.",
+      "enum": ["stable", "tip"],
+      "examples": ["stable", "tip"]
+    }
+  },
+  "types": {
+    "keybind": {
+      "description": "Keybind in format [prefix:]trigger=action[:param]",
+      "prefixes": ["global", "all", "unconsumed", "performable"],
+      "modifiers": ["shift", "ctrl", "control", "alt", "opt", "option", "super", "cmd", "command"],
+      "actions": [
+        "ignore", "unbind", "csi", "esc", "text", "cursor_key", "reset",
+        "copy_to_clipboard", "paste_from_clipboard", "paste_from_selection",
+        "copy_url_to_clipboard", "copy_title_to_clipboard",
+        "increase_font_size", "decrease_font_size", "reset_font_size", "set_font_size",
+        "clear_screen", "select_all",
+        "scroll_to_top", "scroll_to_bottom", "scroll_to_selection",
+        "scroll_page_up", "scroll_page_down", "scroll_page_fractional", "scroll_page_lines",
+        "adjust_selection", "jump_to_prompt",
+        "write_scrollback_file", "write_screen_file", "write_selection_file",
+        "new_window", "new_tab", "previous_tab", "next_tab", "last_tab",
+        "goto_tab", "move_tab", "toggle_tab_overview", "prompt_surface_title",
+        "new_split", "goto_split", "toggle_split_zoom", "resize_split", "equalize_splits",
+        "reset_window_size", "toggle_maximize", "toggle_fullscreen",
+        "toggle_window_decorations", "toggle_window_float_on_top", "toggle_visibility",
+        "inspector", "show_gtk_inspector", "show_on_screen_keyboard",
+        "open_config", "reload_config",
+        "close_surface", "close_tab", "close_window", "close_all_windows",
+        "toggle_secure_input", "toggle_command_palette", "toggle_quick_terminal",
+        "check_for_updates", "undo", "redo", "quit", "crash"
+      ]
+    },
+    "color": {
+      "description": "Hex colour (#RGB, #RRGGBB, #RRGGBBAA) or named colour",
+      "patterns": ["^#[0-9a-fA-F]{3}$", "^#[0-9a-fA-F]{6}$", "^#[0-9a-fA-F]{8}$", "^[0-9a-fA-F]{6}$"],
+      "namedValues": [
+        "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+        "gray", "grey", "transparent", "cell-foreground", "cell-background",
+        "background", "extend", "extend-always"
+      ]
+    },
+    "boolean": {
+      "description": "Boolean value",
+      "validValues": ["true", "false", "yes", "no", "on", "off"]
+    },
+    "duration": {
+      "description": "Duration with optional unit (y, d, h, m, s, ms, us, ns)",
+      "patterns": ["^-?\\d+(\\.\\d+)?(y|d|h|m|s|ms|us|µs|ns)?$"]
+    }
+  }
+}

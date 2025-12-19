@@ -1,0 +1,120 @@
+{
+  "name": "ghostty-config",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@vscode/vsce-sign",
+      "keytar"
+    ]
+  },
+  "displayName": "Ghostty Config",
+  "description": "Syntax highlighting, validation, completions, and hover documentation for Ghostty terminal configuration files",
+  "version": "1.0.0",
+  "publisher": "SamMcLeod",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sammcj/vscode-ghostty.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sammcj/vscode-ghostty/issues"
+  },
+  "homepage": "https://github.com/sammcj/vscode-ghostty#readme",
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.107.1"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "ghostty",
+    "terminal",
+    "config",
+    "configuration",
+    "syntax highlighting"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ghostty-config",
+        "aliases": [
+          "Ghostty Config",
+          "ghostty-config"
+        ],
+        "filenames": [
+          "config"
+        ],
+        "extensions": [
+          ".ghostty"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ghostty-config",
+        "scopeName": "source.ghostty",
+        "path": "./syntaxes/ghostty-config.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "ghostty-config.openConfig",
+        "title": "Ghostty: Open Config"
+      }
+    ],
+    "configuration": {
+      "title": "Ghostty Config",
+      "properties": {
+        "ghostty-config.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time validation and diagnostics"
+        },
+        "ghostty-config.diagnosticSeverity": {
+          "type": "string",
+          "enum": [
+            "Error",
+            "Warning",
+            "Information",
+            "Hint"
+          ],
+          "default": "Warning",
+          "description": "Severity level for unknown key diagnostics"
+        },
+        "ghostty-config.showPlatformHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show hints for platform-specific configuration keys"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "lint:fix": "eslint src --ext ts --fix",
+    "test": "pnpm run compile && node ./out/test/suite/index.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.0.3",
+    "@types/vscode": "^1.107.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.39.2",
+    "glob": "^13.0.0",
+    "mocha": "^11.7.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0"
+  }
+}

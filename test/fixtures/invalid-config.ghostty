@@ -1,0 +1,26 @@
+# Invalid Ghostty configuration for testing
+
+# Unknown keys (should show warnings)
+unknown-key = value
+made-up-option = test
+
+# Invalid values
+cursor-style = invalid-style
+background-opacity = 2.5
+font-size = not-a-number
+
+# Invalid boolean
+bold-is-bright = maybe
+
+# Invalid colour
+background = not-a-colour
+
+# Duplicate non-repeatable keys (should show warnings)
+font-size = 14
+font-size = 16
+
+cursor-style = block
+cursor-style = bar
+
+# Invalid line format
+this is not valid syntax

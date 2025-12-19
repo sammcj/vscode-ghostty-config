@@ -1,0 +1,312 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Ghostty Config",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#key-value" },
+    { "include": "#config-directive" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.ghostty",
+          "match": "^\\s*#.*$"
+        }
+      ]
+    },
+    "key-value": {
+      "patterns": [
+        {
+          "match": "^\\s*([a-zA-Z][a-zA-Z0-9_-]*)\\s*(=)\\s*(.*?)\\s*$",
+          "captures": {
+            "1": { "patterns": [{ "include": "#config-keys" }] },
+            "2": { "name": "keyword.operator.assignment.ghostty" },
+            "3": { "patterns": [{ "include": "#values" }] }
+          }
+        }
+      ]
+    },
+    "config-directive": {
+      "patterns": [
+        {
+          "match": "^\\s*(keybind)\\s*(=)\\s*(clear)\\s*$",
+          "captures": {
+            "1": { "name": "variable.other.property.ghostty" },
+            "2": { "name": "keyword.operator.assignment.ghostty" },
+            "3": { "name": "keyword.control.ghostty" }
+          }
+        }
+      ]
+    },
+    "config-keys": {
+      "patterns": [
+        {
+          "name": "variable.other.property.font.ghostty",
+          "match": "\\b(font-family|font-family-bold|font-family-italic|font-family-bold-italic|font-style|font-style-bold|font-style-italic|font-style-bold-italic|font-synthetic-style|font-feature|font-size|font-variation|font-variation-bold|font-variation-italic|font-variation-bold-italic|font-codepoint-map|font-thicken|font-thicken-strength|font-shaping-break|freetype-load-flags)\\b"
+        },
+        {
+          "name": "variable.other.property.color.ghostty",
+          "match": "\\b(background|foreground|selection-foreground|selection-background|selection-invert-fg-bg|minimum-contrast|palette|cursor-color|cursor-invert-fg-bg|cursor-opacity|cursor-text|split-divider-color|unfocused-split-opacity|unfocused-split-fill|window-titlebar-background|window-titlebar-foreground)\\b"
+        },
+        {
+          "name": "variable.other.property.cursor.ghostty",
+          "match": "\\b(cursor-style|cursor-style-blink|cursor-click-to-move)\\b"
+        },
+        {
+          "name": "variable.other.property.mouse.ghostty",
+          "match": "\\b(mouse-hide-while-typing|mouse-shift-capture|mouse-scroll-multiplier|focus-follows-mouse)\\b"
+        },
+        {
+          "name": "variable.other.property.window.ghostty",
+          "match": "\\b(window-padding-x|window-padding-y|window-padding-balance|window-padding-color|window-vsync|window-inherit-working-directory|window-inherit-font-size|window-decoration|window-title-font-family|window-subtitle|window-theme|window-colorspace|window-height|window-width|window-position-x|window-position-y|window-save-state|window-step-resize|window-new-tab-position|window-show-tab-bar|maximize|fullscreen|title|class|x11-instance-name)\\b"
+        },
+        {
+          "name": "variable.other.property.background.ghostty",
+          "match": "\\b(background-opacity|background-blur|background-image|background-image-opacity|background-image-position|background-image-fit|background-image-repeat|background-opacity-cells)\\b"
+        },
+        {
+          "name": "variable.other.property.clipboard.ghostty",
+          "match": "\\b(clipboard-read|clipboard-write|clipboard-trim-trailing-spaces|clipboard-paste-protection|clipboard-paste-bracketed-safe|copy-on-select|click-repeat-interval|right-click-action)\\b"
+        },
+        {
+          "name": "variable.other.property.terminal.ghostty",
+          "match": "\\b(command|initial-command|wait-after-command|abnormal-command-exit-runtime|scrollback-limit|working-directory|term|enquiry-response|bold-is-bright|grapheme-width-method|alpha-blending|env|input)\\b"
+        },
+        {
+          "name": "variable.other.property.adjustment.ghostty",
+          "match": "\\b(adjust-cell-width|adjust-cell-height|adjust-font-baseline|adjust-underline-position|adjust-underline-thickness|adjust-strikethrough-position|adjust-strikethrough-thickness|adjust-overline-position|adjust-overline-thickness|adjust-cursor-thickness|adjust-cursor-height|adjust-box-thickness|adjust-icon-height)\\b"
+        },
+        {
+          "name": "variable.other.property.keybind.ghostty",
+          "match": "\\b(keybind)\\b"
+        },
+        {
+          "name": "variable.other.property.link.ghostty",
+          "match": "\\b(link-url|link-previews)\\b"
+        },
+        {
+          "name": "variable.other.property.theme.ghostty",
+          "match": "\\b(theme)\\b"
+        },
+        {
+          "name": "variable.other.property.config.ghostty",
+          "match": "\\b(config-file|config-default-files|confirm-close-surface|quit-after-last-window-closed|quit-after-last-window-closed-delay|initial-window|command-palette-entry)\\b"
+        },
+        {
+          "name": "variable.other.property.resize.ghostty",
+          "match": "\\b(resize-overlay|resize-overlay-position|resize-overlay-duration)\\b"
+        },
+        {
+          "name": "variable.other.property.quick-terminal.ghostty",
+          "match": "\\b(quick-terminal-position|quick-terminal-size|quick-terminal-screen|quick-terminal-animation-duration|quick-terminal-autohide|quick-terminal-space-behavior|quick-terminal-keyboard-interactivity|gtk-quick-terminal-layer|gtk-quick-terminal-namespace)\\b"
+        },
+        {
+          "name": "variable.other.property.shell.ghostty",
+          "match": "\\b(shell-integration|shell-integration-features)\\b"
+        },
+        {
+          "name": "variable.other.property.security.ghostty",
+          "match": "\\b(title-report|image-storage-limit|osc-color-report-format|vt-kam-allowed)\\b"
+        },
+        {
+          "name": "variable.other.property.shader.ghostty",
+          "match": "\\b(custom-shader|custom-shader-animation)\\b"
+        },
+        {
+          "name": "variable.other.property.notification.ghostty",
+          "match": "\\b(app-notifications|desktop-notifications)\\b"
+        },
+        {
+          "name": "variable.other.property.selection.ghostty",
+          "match": "\\b(selection-clear-on-typing|selection-clear-on-copy|scroll-to-bottom|scroll-to-selection)\\b"
+        },
+        {
+          "name": "variable.other.property.undo.ghostty",
+          "match": "\\b(undo-timeout)\\b"
+        },
+        {
+          "name": "variable.other.property.macos.ghostty",
+          "match": "\\b(macos-non-native-fullscreen|macos-titlebar-style|macos-titlebar-proxy-icon|macos-option-as-alt|macos-window-shadow|macos-auto-secure-input|macos-secure-input-indication|macos-icon|macos-icon-frame|macos-icon-ghost-color|macos-icon-screen-color)\\b"
+        },
+        {
+          "name": "variable.other.property.linux.ghostty",
+          "match": "\\b(linux-cgroup|linux-cgroup-memory-limit|linux-cgroup-processes-limit|linux-cgroup-hard-fail)\\b"
+        },
+        {
+          "name": "variable.other.property.gtk.ghostty",
+          "match": "\\b(gtk-opengl-debug|gtk-gsk-renderer|gtk-single-instance|gtk-titlebar|gtk-tabs-location|gtk-titlebar-hide-when-maximized|adw-toolbar-style|gtk-wide-tabs|gtk-adwaita|gtk-custom-css)\\b"
+        },
+        {
+          "name": "variable.other.property.update.ghostty",
+          "match": "\\b(auto-update|auto-update-channel)\\b"
+        },
+        {
+          "name": "variable.other.property.ghostty",
+          "match": "\\b[a-zA-Z][a-zA-Z0-9_-]*\\b"
+        }
+      ]
+    },
+    "values": {
+      "patterns": [
+        { "include": "#quoted-string" },
+        { "include": "#keybind-value" },
+        { "include": "#color-value" },
+        { "include": "#boolean-value" },
+        { "include": "#numeric-value" },
+        { "include": "#path-value" },
+        { "include": "#enum-value" },
+        { "include": "#unquoted-value" }
+      ]
+    },
+    "quoted-string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.ghostty",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [{ "name": "constant.character.escape.ghostty", "match": "\\\\." }]
+        },
+        {
+          "name": "string.quoted.single.ghostty",
+          "begin": "'",
+          "end": "'",
+          "patterns": [{ "name": "constant.character.escape.ghostty", "match": "\\\\." }]
+        }
+      ]
+    },
+    "keybind-value": {
+      "patterns": [
+        {
+          "match": "\\b(global:|all:|unconsumed:|performable:)?(.*?)=(.*?)$",
+          "captures": {
+            "1": { "name": "keyword.other.prefix.ghostty" },
+            "2": { "patterns": [{ "include": "#keybind-trigger" }] },
+            "3": { "patterns": [{ "include": "#keybind-action" }] }
+          }
+        }
+      ]
+    },
+    "keybind-trigger": {
+      "patterns": [
+        {
+          "name": "support.function.modifier.ghostty",
+          "match": "\\b(shift|ctrl|control|alt|opt|option|super|cmd|command)\\b"
+        },
+        {
+          "name": "support.function.key.ghostty",
+          "match": "\\b(physical:)?\\b(up|down|left|right|home|end|page_up|page_down|insert|delete|tab|enter|escape|space|backspace|one|two|three|four|five|six|seven|eight|nine|zero|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|f1|f2|f3|f4|f5|f6|f7|f8|f9|f10|f11|f12|f13|f14|f15|f16|f17|f18|f19|f20)\\b"
+        },
+        {
+          "name": "keyword.operator.sequence.ghostty",
+          "match": ">"
+        },
+        {
+          "name": "keyword.operator.plus.ghostty",
+          "match": "\\+"
+        }
+      ]
+    },
+    "keybind-action": {
+      "patterns": [
+        {
+          "name": "support.function.action.ghostty",
+          "match": "\\b(ignore|unbind|csi|esc|text|cursor_key|reset|copy_to_clipboard|paste_from_clipboard|paste_from_selection|copy_url_to_clipboard|copy_title_to_clipboard|increase_font_size|decrease_font_size|reset_font_size|set_font_size|clear_screen|select_all|scroll_to_top|scroll_to_bottom|scroll_to_selection|scroll_page_up|scroll_page_down|scroll_page_fractional|scroll_page_lines|adjust_selection|jump_to_prompt|write_scrollback_file|write_screen_file|write_selection_file|new_window|new_tab|previous_tab|next_tab|last_tab|goto_tab|move_tab|toggle_tab_overview|prompt_surface_title|new_split|goto_split|toggle_split_zoom|resize_split|equalize_splits|reset_window_size|toggle_maximize|toggle_fullscreen|toggle_window_decorations|toggle_window_float_on_top|toggle_visibility|inspector|show_gtk_inspector|show_on_screen_keyboard|open_config|reload_config|close_surface|close_tab|close_window|close_all_windows|toggle_secure_input|toggle_command_palette|toggle_quick_terminal|check_for_updates|undo|redo|quit|crash)\\b"
+        },
+        {
+          "name": "string.other.action-param.ghostty",
+          "match": ":(.*?)$"
+        }
+      ]
+    },
+    "color-value": {
+      "patterns": [
+        {
+          "name": "constant.other.color.hex.ghostty",
+          "match": "#[0-9a-fA-F]{3,8}\\b"
+        },
+        {
+          "name": "constant.other.color.hex.ghostty",
+          "match": "\\b[0-9a-fA-F]{6}\\b"
+        },
+        {
+          "name": "constant.other.color.named.ghostty",
+          "match": "\\b(black|red|green|yellow|blue|magenta|cyan|white|gray|grey|darkred|darkgreen|darkyellow|darkblue|darkmagenta|darkcyan|lightgray|lightgrey|lightred|lightgreen|lightyellow|lightblue|lightmagenta|lightcyan|orange|pink|purple|brown|gold|silver|navy|maroon|olive|lime|aqua|teal|fuchsia|transparent|cell-foreground|cell-background)\\b"
+        }
+      ]
+    },
+    "boolean-value": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.ghostty",
+          "match": "\\b(true|false|yes|no|on|off)\\b"
+        }
+      ]
+    },
+    "numeric-value": {
+      "patterns": [
+        {
+          "name": "constant.numeric.integer.ghostty",
+          "match": "\\b-?[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.ghostty",
+          "match": "\\b-?[0-9]*\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.percentage.ghostty",
+          "match": "\\b-?[0-9]+(?:\\.[0-9]+)?%\\b"
+        }
+      ]
+    },
+    "path-value": {
+      "patterns": [
+        {
+          "name": "string.other.path.ghostty",
+          "match": "\\b(/[^\\s=]*|\\./[^\\s=]*|\\?[^\\s=]*|~[^\\s=]*)\\b"
+        }
+      ]
+    },
+    "enum-value": {
+      "patterns": [
+        {
+          "name": "constant.other.enum.cursor.ghostty",
+          "match": "\\b(block|bar|underline|block_hollow)\\b"
+        },
+        {
+          "name": "constant.other.enum.theme.ghostty",
+          "match": "\\b(auto|system|light|dark|ghostty)\\b"
+        },
+        {
+          "name": "constant.other.enum.window.ghostty",
+          "match": "\\b(none|client|server|native|transparent|tabs|hidden|center|top|bottom|left|right|top-left|top-center|top-right|bottom-left|bottom-center|bottom-right|current|end|always|never|after-first|main|mouse|macos-menu-bar|move|remain|visible|flat|raised|raised-border|desktop|single-instance|default)\\b"
+        },
+        {
+          "name": "constant.other.enum.integration.ghostty",
+          "match": "\\b(detect|bash|elvish|fish|zsh|cursor|sudo|title|ssh-env|ssh-terminfo|no-cursor|no-sudo|no-title)\\b"
+        },
+        {
+          "name": "constant.other.enum.format.ghostty",
+          "match": "\\b(8-bit|16-bit|srgb|display-p3|unicode|legacy|native|linear|linear-corrected|ask|allow|deny|stable|tip|off|check|download|contain|cover|stretch|keystroke|output|context-menu|paste|copy|copy-or-paste|clipboard|toggle|show|hide|osc8)\\b"
+        },
+        {
+          "name": "constant.other.enum.macos.ghostty",
+          "match": "\\b(visible-menu|official|blueprint|chalkboard|microchip|glass|holographic|paper|retro|xray|custom-style|aluminum|beige|plastic|chrome|working-directory|home|inherit)\\b"
+        },
+        {
+          "name": "constant.other.enum.gtk.ghostty",
+          "match": "\\b(overlay|background|on-demand|exclusive)\\b"
+        }
+      ]
+    },
+    "unquoted-value": {
+      "patterns": [
+        {
+          "name": "string.unquoted.ghostty",
+          "match": "[^\\s#]+"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.ghostty"
+}

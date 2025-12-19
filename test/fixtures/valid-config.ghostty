@@ -1,0 +1,46 @@
+# Valid Ghostty configuration for testing
+
+# Font settings
+font-family = JetBrains Mono
+font-family = Fira Code
+font-size = 14
+
+# Colours
+background = #282c34
+foreground = #abb2bf
+cursor-color = #528bff
+
+# Theme
+theme = auto
+
+# Window settings
+window-padding-x = 10
+window-padding-y = 10
+window-decoration = auto
+
+# Multiple keybinds (should NOT show duplicate warnings)
+keybind = ctrl+c=copy_to_clipboard
+keybind = ctrl+v=paste_from_clipboard
+keybind = ctrl+shift+c=copy_to_clipboard
+keybind = ctrl+shift+v=paste_from_clipboard
+keybind = ctrl+t=new_tab
+keybind = ctrl+w=close_surface
+keybind = ctrl+a>n=new_window
+
+# Multiple palette entries (should NOT show duplicate warnings)
+palette = 0=#1d2021
+palette = 1=#cc241d
+palette = 2=#98971a
+palette = 3=#d79921
+
+# Multiple env entries (should NOT show duplicate warnings)
+env = EDITOR=vim
+env = PAGER=less
+
+# Shell integration
+shell-integration = detect
+
+# Boolean values
+bold-is-bright = true
+mouse-hide-while-typing = false
+clipboard-trim-trailing-spaces = yes
