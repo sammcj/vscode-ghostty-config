@@ -1,4 +1,4 @@
-# Ghostty Config
+# Ghostty Config VSCode Extension
 
 VS Code extension providing syntax highlighting, validation, completions, and hover documentation for [Ghostty](https://ghostty.org) terminal configuration files.
 
@@ -53,7 +53,7 @@ Unlike some other config extensions, this extension correctly handles keys that 
 - [Ghostty Documentation](https://ghostty.org/docs)
 - [Config Reference](https://ghostty.org/docs/config/reference)
 - [Keybind Reference](https://ghostty.org/docs/config/keybind/reference)
-- [Report Issues](https://github.com/sammcj/vscode-ghostty/issues)
+- [Report Issues](https://github.com/sammcj/vscode-ghostty-config/issues)
 
 ## Development
 
