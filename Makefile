@@ -1,8 +1,11 @@
-.PHONY: all build lint test package clean install watch install-extension
+.PHONY: all build lint test package clean install watch install-extension setup
 
 all: build
 
-install:
+setup:
+	git config core.hooksPath .githooks
+
+install: setup
 	pnpm install
 
 build: install
@@ -29,7 +32,8 @@ watch:
 help:
 	@echo "Available targets:"
 	@echo "  all               - Default target, builds the project"
-	@echo "  install           - Install project dependencies"
+	@echo "  setup             - Configure git hooks"
+	@echo "  install           - Install dependencies and setup hooks"
 	@echo "  build             - Compile the project"
 	@echo "  lint              - Lint the source code"
 	@echo "  test              - Run tests"

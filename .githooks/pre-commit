@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Fetch latest tags from remote to sync version
+echo "Fetching latest tags from origin..."
+git fetch origin --tags --quiet
+
+LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+
+if [ -n "$LATEST_TAG" ]; then
+  REMOTE_VERSION="${LATEST_TAG#v}"
+  LOCAL_VERSION=$(node -p "require('./package.json').version")
+
+  if [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
+    echo "Syncing package.json version: $LOCAL_VERSION → $REMOTE_VERSION"
+    pnpm version "$REMOTE_VERSION" --no-git-tag-version --allow-same-version
+    git add package.json
+  fi
+fi
