@@ -1,4 +1,4 @@
-# Ghostty Config Extension
+# Ghostty Config Syntax Extension
 
 VSCode extension for Ghostty terminal config files. Uses native VSCode providers (not LSP) for simplicity.
 
@@ -31,7 +31,7 @@ Schema designed for future Zed extension compatibility (same JSON, different pro
 
 **Schema path in tests**: Use `path.join(__dirname, '../../../schema/ghostty-syntax.schema.json')` from compiled test files in `out/test/suite/`.
 
-**CI versioning**: Release workflow extracts version from git tag (`v1.2.3` → `1.2.3`) and updates package.json before packaging.
+**CI versioning**: Release workflow auto-increments patch version after lint/test/build pass, commits with `[skip-ci]`, then publishes. Use `[skip-ci]` or `[skip-release]` in commit message to prevent release.
 </GOTCHAS>
 
 <TESTING>

@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -27,56 +28,43 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Get version from package.json
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Check if version tag exists
-        id: check_tag
-        run: |
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install dependencies
-        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm run lint
 
       - name: Compile
-        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm run compile
 
       - name: Test
-        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm test
 
+      - name: Bump patch version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          pnpm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          git add package.json
+          git commit -m "chore: bump version to $VERSION [skip-ci]"
+          git push
+
       - name: Package extension
-        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm exec vsce package
 
       - name: Publish to VS Code Marketplace
-        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm exec vsce publish -p ${{ secrets.VSCE_PAT }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
-      - name: Create git tag
-        if: steps.check_tag.outputs.exists == 'false'
+      - name: Create git tag and release
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "v$VERSION" -m "Release v$VERSION"
           git push origin "v$VERSION"
 
       - name: Create GitHub Release
-        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION }}
