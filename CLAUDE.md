@@ -31,7 +31,7 @@ Schema designed for future Zed extension compatibility (same JSON, different pro
 
 **Schema path in tests**: Use `path.join(__dirname, '../../../schema/ghostty-syntax.schema.json')` from compiled test files in `out/test/suite/`.
 
-**CI versioning**: Release workflow auto-increments patch version after lint/test/build pass, commits with `[skip-ci]`, then publishes. Use `[skip-ci]` or `[skip-release]` in commit message to prevent release.
+**CI versioning**: Release workflow auto-increments patch version via `pnpm version patch`, commits to main with `[skip-ci]`, then publishes. Use `[skip-ci]` or `[skip-release]` in commit message to prevent release.
 </GOTCHAS>
 
 <TESTING>
