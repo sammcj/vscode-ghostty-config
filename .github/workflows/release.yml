@@ -2,17 +2,21 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '.github/workflows/ci.yml'
 
 jobs:
   release:
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+    if: "!contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.head_commit.message, '[skip-release]')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -22,34 +26,58 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Set version from tag
+      - name: Get version from package.json
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          npm pkg set version="$VERSION"
+
+      - name: Check if version tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install dependencies
+        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm install --frozen-lockfile
 
       - name: Lint
+        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm run lint
 
       - name: Compile
+        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm run compile
 
       - name: Test
+        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm test
 
       - name: Package extension
+        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm exec vsce package
 
       - name: Publish to VS Code Marketplace
+        if: steps.check_tag.outputs.exists == 'false'
         run: pnpm exec vsce publish -p ${{ secrets.VSCE_PAT }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
+      - name: Create git tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+
       - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ env.VERSION }}
           files: "*.vsix"
           generate_release_notes: true

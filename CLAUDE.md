@@ -19,8 +19,9 @@ Schema designed for future Zed extension compatibility (same JSON, different pro
 - Parser returns `ParsedLine[]` with types: `keyValue`, `comment`, `empty`, `invalid`
 - Use Australian or British English spelling throughout
 - Keep documentation concise and actionable
-- Always use the latest stable package versions
+- Always use the latest stable package and github actions versions, always check these if you are adding new packages or actions
 - Always run make lint, make test and make build before stating you're done with a change (unless it's documentation only)
+- The project uses pnpm, not npm but you should use the makefile as the way to run commands
 </CONVENTIONS>
 
 <GOTCHAS>

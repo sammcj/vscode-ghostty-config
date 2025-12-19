@@ -1,14 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
   build:
-    if: "!contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]')"
+    if: "!contains(github.event.pull_request.title, '[skip-ci]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -32,15 +30,3 @@ jobs:
 
       - name: Test
         run: pnpm test
-
-      - name: Package extension
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: pnpm exec vsce package
-
-      - name: Upload VSIX artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ghostty-config-${{ github.sha }}.vsix
-          path: "*.vsix"
-          retention-days: 30
