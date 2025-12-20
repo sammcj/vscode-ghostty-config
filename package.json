@@ -53,6 +53,7 @@
         "extensions": [
           ".ghostty"
         ],
+        "firstLine": "^#\\s*(vim?:\\s*(set\\s+)?ft=ghostty|-\\*-\\s*(mode:\\s*)?ghostty\\s*-\\*-)",
         "configuration": "./language-configuration.json"
       }
     ],
