@@ -8,7 +8,7 @@
   },
   "displayName": "Ghostty Config Syntax",
   "description": "Syntax highlighting, validation, completions, and hover documentation for Ghostty terminal configuration files",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "SamMcLeod",
   "license": "MIT",
   "repository": {
