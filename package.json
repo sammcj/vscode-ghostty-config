@@ -21,7 +21,7 @@
   "homepage": "https://github.com/sammcj/vscode-ghostty-config-syntax#readme",
   "icon": "resources/icon.png",
   "engines": {
-    "vscode": "^1.107.1"
+    "vscode": "^1.109.0"
   },
   "categories": [
     "Programming Languages",
