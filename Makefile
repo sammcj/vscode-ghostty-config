@@ -1,4 +1,4 @@
-.PHONY: all build lint test package clean install watch package-install setup
+.PHONY: all build lint test package clean install watch package-install setup sync-config
 
 all: build
 
@@ -23,6 +23,9 @@ package: lint test build
 package-install: package
 	$$SHELL -ic 'code --package-install ghostty-config-syntax-*.vsix --force'
 
+sync-config:
+	./scripts/sync-ghostty-config.sh
+
 clean:
 	rm -rf out node_modules *.vsix
 
@@ -39,6 +42,7 @@ help:
 	@echo "  test              - Run tests"
 	@echo "  package           - Package the project"
 	@echo "  package-install - Package and install into VSCode"
+	@echo "  sync-config       - Compare schema with upstream Ghostty config"
 	@echo "  clean             - Clean build artifacts and dependencies"
 	@echo "  watch             - Watch for changes and rebuild automatically"
 

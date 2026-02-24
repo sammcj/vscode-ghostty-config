@@ -89,7 +89,10 @@ export class GhosttyHoverProvider implements vscode.HoverProvider {
     }
 
     if (option.deprecated) {
-      md.appendMarkdown(`⚠️ **Deprecated:** This option may be removed in future versions.\n\n`);
+      const reason = typeof option.deprecated === 'string'
+        ? option.deprecated
+        : 'This option may be removed in future versions.';
+      md.appendMarkdown(`⚠️ **Deprecated:** ${reason}\n\n`);
     }
 
     md.appendMarkdown(`[📖 Documentation](https://ghostty.org/docs/config/reference#${key.replace(/-/g, '')})`);

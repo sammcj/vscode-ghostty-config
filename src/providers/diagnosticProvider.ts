@@ -121,10 +121,13 @@ export class GhosttyDiagnosticProvider implements vscode.Disposable {
         ? new vscode.Range(line.lineNumber, line.keyRange.start, line.lineNumber, line.keyRange.end)
         : new vscode.Range(line.lineNumber, 0, line.lineNumber, line.raw.length);
 
+      const deprecatedMsg = typeof option.deprecated === 'string'
+        ? `'${key}' is deprecated. ${option.deprecated}`
+        : `'${key}' is deprecated and may be removed in future versions`;
       diagnostics.push(
         new vscode.Diagnostic(
           keyRange,
-          `'${key}' is deprecated and may be removed in future versions`,
+          deprecatedMsg,
           vscode.DiagnosticSeverity.Hint
         )
       );

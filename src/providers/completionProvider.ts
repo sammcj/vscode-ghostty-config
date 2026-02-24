@@ -289,7 +289,10 @@ export class GhosttyCompletionProvider implements vscode.CompletionItemProvider 
     }
 
     if (option.deprecated) {
-      md.appendMarkdown(`⚠️ **Deprecated**\n\n`);
+      const reason = typeof option.deprecated === 'string'
+        ? option.deprecated
+        : 'This option may be removed in future versions.';
+      md.appendMarkdown(`⚠️ **Deprecated:** ${reason}\n\n`);
     }
 
     return md;

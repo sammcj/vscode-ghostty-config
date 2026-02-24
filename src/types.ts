@@ -10,7 +10,7 @@ export interface ConfigOption {
   type: ConfigValueType;
   description: string;
   repeatable?: boolean;
-  deprecated?: boolean;
+  deprecated?: boolean | string;
   enum?: string[];
   examples?: string[];
   platforms?: Platform[];
