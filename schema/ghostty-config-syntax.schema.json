@@ -1242,6 +1242,7 @@
         "paper",
         "retro",
         "xray",
+        "custom",
         "custom-style"
       ],
       "platforms": [
