@@ -291,7 +291,7 @@
         },
         {
           "name": "constant.other.enum.macos.ghostty",
-          "match": "\\b(visible-menu|official|blueprint|chalkboard|microchip|glass|holographic|paper|retro|xray|custom|custom-style|aluminum|beige|plastic|chrome|working-directory|home|inherit)\\b"
+          "match": "\\b(visible-menu|official|blueprint|chalkboard|microchip|glass|holographic|paper|retro|xray|custom-style|custom|aluminum|beige|plastic|chrome|working-directory|home|inherit)\\b"
         },
         {
           "name": "constant.other.enum.gtk.ghostty",
