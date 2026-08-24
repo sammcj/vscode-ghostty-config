@@ -45,8 +45,9 @@
           "Ghostty Config",
           "ghostty-config-syntax"
         ],
-        "filenames": [
-          "config"
+        "filenamePatterns": [
+          "**/ghostty/config",
+          "**/com.mitchellh.ghostty/config"
         ],
         "extensions": [
           ".ghostty"

@@ -12,6 +12,7 @@ export interface ConfigOption {
   repeatable?: boolean;
   deprecated?: boolean | string;
   enum?: string[];
+  flagSet?: boolean;
   examples?: string[];
   platforms?: Platform[];
   minimum?: number;

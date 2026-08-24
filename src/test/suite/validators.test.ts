@@ -3,7 +3,29 @@ import {
   validateColor,
   validateBoolean,
   validateNumber,
+  validateValue,
 } from '../../validation/validators';
+import { GhosttySchema } from '../../types';
+
+const flagSchema: GhosttySchema = {
+  version: 'test',
+  description: 'test',
+  types: {},
+  repeatableKeys: [],
+  options: {
+    'font-synthetic-style': {
+      type: 'enum',
+      description: '',
+      flagSet: true,
+      enum: ['bold', 'italic', 'bold-italic'],
+    },
+    'cursor-style': {
+      type: 'enum',
+      description: '',
+      enum: ['block', 'bar', 'underline', 'block_hollow'],
+    },
+  },
+};
 
 suite('Validators', () => {
   suite('validateColor', () => {
@@ -69,6 +91,54 @@ suite('Validators', () => {
 
     test('rejects non-numbers', () => {
       assert.strictEqual(validateNumber('abc').isValid, false);
+    });
+  });
+
+  suite('flag-set enum validation', () => {
+    const check = (value: string) =>
+      validateValue(flagSchema, 'font-synthetic-style', value).isValid;
+
+    test('accepts a single flag', () => {
+      assert.strictEqual(check('bold'), true);
+      assert.strictEqual(check('bold-italic'), true);
+    });
+
+    test('accepts a no- prefixed flag', () => {
+      assert.strictEqual(check('no-bold'), true);
+    });
+
+    test('accepts a comma-separated list of flags', () => {
+      assert.strictEqual(check('no-bold,no-italic'), true);
+      assert.strictEqual(check('bold, italic'), true);
+    });
+
+    test('accepts true/false to toggle all', () => {
+      assert.strictEqual(check('true'), true);
+      assert.strictEqual(check('false'), true);
+    });
+
+    test('rejects an unknown flag', () => {
+      assert.strictEqual(check('wiggle'), false);
+      assert.strictEqual(check('no-underline'), false);
+      assert.strictEqual(check('bold,nope'), false);
+    });
+  });
+
+  suite('plain enum validation', () => {
+    const check = (value: string) =>
+      validateValue(flagSchema, 'cursor-style', value).isValid;
+
+    test('accepts a known value', () => {
+      assert.strictEqual(check('block'), true);
+      assert.strictEqual(check('block_hollow'), true);
+    });
+
+    test('rejects an unknown value', () => {
+      assert.strictEqual(check('triangle'), false);
+    });
+
+    test('does not split plain enums on commas', () => {
+      assert.strictEqual(check('block,bar'), false);
     });
   });
 });

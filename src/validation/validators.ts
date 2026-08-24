@@ -125,6 +125,10 @@ function validateEnum(value: string, option: ConfigOption): ValidationResult {
     return { isValid: true };
   }
 
+  if (option.flagSet) {
+    return validateFlagSet(value, option.enum);
+  }
+
   if (option.enum.includes(value)) {
     return { isValid: true };
   }
@@ -134,6 +138,30 @@ function validateEnum(value: string, option: ConfigOption): ValidationResult {
     message: `Invalid value: '${value}'. Expected one of: ${option.enum.join(', ')}`,
     severity: 'error',
   };
+}
+
+// Flag-set options (Ghostty packed structs) accept a comma-separated list of
+// flags, each optionally prefixed with 'no-' to disable it, plus 'true'/'false'
+// to toggle all flags at once. Example: 'no-bold,no-italic'.
+function validateFlagSet(value: string, flags: string[]): ValidationResult {
+  if (/^(true|false)$/i.test(value.trim())) {
+    return { isValid: true };
+  }
+
+  const tokens = value.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+
+  for (const token of tokens) {
+    const base = token.startsWith('no-') ? token.slice(3) : token;
+    if (!flags.includes(base)) {
+      return {
+        isValid: false,
+        message: `Invalid flag: '${token}'. Expected a comma-separated list of: ${flags.join(', ')} (each optionally prefixed with 'no-'), or 'true'/'false'`,
+        severity: 'error',
+      };
+    }
+  }
+
+  return { isValid: true };
 }
 
 function validateKeybind(value: string, schema: GhosttySchema): ValidationResult {
