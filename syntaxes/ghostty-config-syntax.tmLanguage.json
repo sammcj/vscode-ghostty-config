@@ -178,7 +178,7 @@
     "keybind-value": {
       "patterns": [
         {
-          "match": "\\b(global:|all:|unconsumed:|performable:)?(.*?)=(.*?)$",
+          "match": "\\b(global:|all:|unconsumed:|performable:)?(.*?)=(?![+=])(.*?)$",
           "captures": {
             "1": { "name": "keyword.other.prefix.ghostty" },
             "2": { "patterns": [{ "include": "#keybind-trigger" }] },

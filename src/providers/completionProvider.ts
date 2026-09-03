@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { GhosttySchema, ConfigOption } from '../types';
 import { parseLine, isInKeyPosition, isInValuePosition } from '../parser/configParser';
+import { findKeybindSeparator } from '../parser/keybindParser';
 
 export class GhosttyCompletionProvider implements vscode.CompletionItemProvider {
   constructor(private schema: GhosttySchema) {}
@@ -154,12 +155,13 @@ export class GhosttyCompletionProvider implements vscode.CompletionItemProvider 
   private getKeybindCompletions(partial: string): vscode.CompletionItem[] {
     const items: vscode.CompletionItem[] = [];
     const keybindType = this.schema.types['keybind'];
+    const separatorIndex = findKeybindSeparator(partial);
 
-    // Check if partial already has trigger (contains =)
-    if (partial.includes('=')) {
+    // Check if partial already has a trigger and action separator
+    if (separatorIndex !== -1) {
       // Suggest actions
       if (keybindType?.actions) {
-        const actionPrefix = partial.split('=')[1]?.toLowerCase() || '';
+        const actionPrefix = partial.substring(separatorIndex + 1).toLowerCase();
         for (const action of keybindType.actions) {
           if (!actionPrefix || action.toLowerCase().includes(actionPrefix)) {
             const item = new vscode.CompletionItem(action, vscode.CompletionItemKind.Function);

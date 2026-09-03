@@ -1,4 +1,5 @@
 import { ConfigOption, GhosttySchema, ValidationResult } from '../types';
+import { findKeybindSeparator } from '../parser/keybindParser';
 
 const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{8}$/;
 const HEX_COLOR_NO_HASH_REGEX = /^[0-9a-fA-F]{6}$/;
@@ -171,7 +172,7 @@ function validateKeybind(value: string, schema: GhosttySchema): ValidationResult
   }
 
   // Basic format: [prefix:]trigger=action[:param]
-  const equalsIndex = value.indexOf('=');
+  const equalsIndex = findKeybindSeparator(value);
   if (equalsIndex === -1) {
     return {
       isValid: false,
