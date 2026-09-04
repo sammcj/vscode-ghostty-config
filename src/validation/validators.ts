@@ -31,11 +31,40 @@ const HEX_FLOAT_REGEX =
 const NON_FINITE_REGEX = /^[+-]?(?:inf(?:inity)?|nan)$/i;
 
 // Metrics.Modifier parses its bare form into an i32.
-const I32_MIN = -2147483648;
-const I32_MAX = 2147483647;
+const I32_MIN = -2147483648n;
+const I32_MAX = 2147483647n;
 
 function isFloatShaped(value: string): boolean {
   return DECIMAL_REGEX.test(value) || HEX_FLOAT_REGEX.test(value) || NON_FINITE_REGEX.test(value);
+}
+
+/**
+ * Resolves a value already matched by INTEGER_REGEX. BigInt reads the same
+ * 0x/0o/0b prefixes as Zig, but not underscores or a leading plus.
+ */
+function integerValue(value: string): bigint | null {
+  // BigInt rejects a sign in front of a radix prefix, so apply it separately.
+  const unsigned = value.replace(/_/g, '').replace(/^[+-]/, '');
+  try {
+    const magnitude = BigInt(unsigned);
+    return value.startsWith('-') ? -magnitude : magnitude;
+  } catch {
+    return null;
+  }
+}
+
+/** Keeps a pathological value from filling the diagnostic. */
+function forMessage(value: string): string {
+  return value.length > 24 ? `${value.slice(0, 24)}...` : value;
+}
+
+/** Bounds are authored as whole numbers; anything else is not comparable. */
+function boundAsBigInt(bound: number | string): bigint | null {
+  try {
+    return BigInt(bound);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -129,28 +158,66 @@ export function validateNumber(value: string, option?: ConfigOption): Validation
     };
   }
 
-  const num = numericValue(value);
+  return checkBounds(value, option, isInteger);
+}
+
+/**
+ * Integer options are compared as BigInt so that values beyond a double's
+ * exact range, such as a u64 ceiling or an absurdly long digit string, are
+ * still bounded correctly.
+ */
+function checkBounds(
+  value: string,
+  option: ConfigOption | undefined,
+  isInteger: boolean
+): ValidationResult {
+  if (!option || (option.minimum === undefined && option.maximum === undefined)) {
+    return { isValid: true };
+  }
+
+  const below = (min: number | string) =>
+    ({
+      isValid: false,
+      message: `Value ${forMessage(value)} is below minimum ${min}`,
+      severity: 'error',
+    }) as const;
+  const above = (max: number | string) =>
+    ({
+      isValid: false,
+      message: `Value ${forMessage(value)} is above maximum ${max}`,
+      severity: 'error',
+    }) as const;
+
+  if (isInteger) {
+    const num = integerValue(value);
+    if (num === null) {
+      return { isValid: true };
+    }
+
+    const min = option.minimum !== undefined ? boundAsBigInt(option.minimum) : null;
+    if (min !== null && num < min) {
+      return below(option.minimum as number | string);
+    }
+
+    const max = option.maximum !== undefined ? boundAsBigInt(option.maximum) : null;
+    if (max !== null && num > max) {
+      return above(option.maximum as number | string);
+    }
+    return { isValid: true };
+  }
 
   // inf/nan and hex floats have no finite value to bound, and Ghostty accepts
   // them, so there is nothing to report.
-  if (option && num !== null) {
-    if (option.minimum !== undefined && num < option.minimum) {
-      return {
-        isValid: false,
-        message: `Value ${num} is below minimum ${option.minimum}`,
-        severity: 'error',
-      };
-    }
-
-    if (option.maximum !== undefined && num > option.maximum) {
-      return {
-        isValid: false,
-        message: `Value ${num} is above maximum ${option.maximum}`,
-        severity: 'error',
-      };
-    }
+  const num = numericValue(value);
+  if (num === null) {
+    return { isValid: true };
   }
-
+  if (option.minimum !== undefined && num < Number(option.minimum)) {
+    return below(option.minimum);
+  }
+  if (option.maximum !== undefined && num > Number(option.maximum)) {
+    return above(option.maximum);
+  }
   return { isValid: true };
 }
 
@@ -296,11 +363,11 @@ function validatePercentage(value: string): ValidationResult {
       return { isValid: true };
     }
   } else if (DECIMAL_INTEGER_REGEX.test(value)) {
-    const num = numericValue(value);
+    const num = integerValue(value);
     if (num !== null && (num < I32_MIN || num > I32_MAX)) {
       return {
         isValid: false,
-        message: `Adjustment ${num} is outside the range ${I32_MIN} to ${I32_MAX}`,
+        message: `Adjustment ${forMessage(value)} is outside the range ${I32_MIN} to ${I32_MAX}`,
         severity: 'error',
       };
     }

@@ -241,6 +241,16 @@ suite('Validators', () => {
       assert.strictEqual(check('font-thicken-strength', '256').isValid, false);
     });
 
+    test('bounds u64 options exactly, past what a double holds', () => {
+      const max = '18446744073709551615';
+      assert.strictEqual(check('scrollback-limit-bytes', max).isValid, true);
+      // 2^64 rounds to the same double as the ceiling above, so only an exact
+      // comparison catches it.
+      assert.strictEqual(check('scrollback-limit-bytes', '18446744073709551616').isValid, false);
+      // Long enough to become Infinity, which previously skipped bounds.
+      assert.strictEqual(check('scrollback-limit-bytes', '9'.repeat(400)).isValid, false);
+    });
+
     test('accepts the refreshed enum values', () => {
       assert.strictEqual(check('copy-on-select', 'both').isValid, true);
       assert.strictEqual(check('middle-click-action', 'clipboard-paste').isValid, true);
@@ -410,6 +420,7 @@ suite('Validators', () => {
       assert.strictEqual(check('-2147483648').isValid, true);
       assert.strictEqual(check('2147483648').isValid, false);
       assert.strictEqual(check('-2147483649').isValid, false);
+      assert.strictEqual(check('9'.repeat(400)).isValid, false);
     });
 
     test('accepts digit separators and hex prefixes only where Ghostty does', () => {

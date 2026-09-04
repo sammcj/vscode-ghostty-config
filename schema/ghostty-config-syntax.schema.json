@@ -486,7 +486,7 @@
       "description": "Maximum size in bytes of a single clipboard write via the Kitty clipboard protocol (OSC 5522). Does not apply to OSC 52. Defaults to 64 MiB. Use 'unlimited' to remove the limit, or 0 to reject every non-empty write.",
       "integer": true,
       "minimum": 0,
-      "maximum": 18446744073709551615,
+      "maximum": "18446744073709551615",
       "examples": [
         "67108864",
         "0"
@@ -1237,7 +1237,7 @@
       "description": "Memory limit for Linux cgroup.",
       "integer": true,
       "minimum": 0,
-      "maximum": 18446744073709551615,
+      "maximum": "18446744073709551615",
       "platforms": [
         "linux"
       ],
@@ -1251,7 +1251,7 @@
       "description": "Process limit for Linux cgroup.",
       "integer": true,
       "minimum": 0,
-      "maximum": 18446744073709551615,
+      "maximum": "18446744073709551615",
       "platforms": [
         "linux"
       ],
@@ -1862,7 +1862,7 @@
       "description": "Size of the scrollback buffer in bytes. Renamed upstream; the value is forwarded to scrollback-limit-bytes.",
       "integer": true,
       "minimum": 0,
-      "maximum": 18446744073709551615,
+      "maximum": "18446744073709551615",
       "deprecated": "Deprecated since 1.4. Use scrollback-limit-bytes instead.",
       "examples": [
         "10000000",
@@ -1877,7 +1877,7 @@
       "description": "Size of the scrollback buffer in bytes, per terminal surface, including the active screen. Defaults to 50 MB. Use 'unlimited' to remove the byte limit. If scrollback-limit-lines is also set, the first limit reached wins.",
       "integer": true,
       "minimum": 0,
-      "maximum": 18446744073709551615,
+      "maximum": "18446744073709551615",
       "examples": [
         "50000000",
         "10000000"
@@ -1891,7 +1891,7 @@
       "description": "Maximum number of scrollback lines to retain, excluding the active screen. Soft-wrapped lines count as multiple lines. The limit is an estimate as Ghostty trims whole pages. Defaults to 'unlimited'.",
       "integer": true,
       "minimum": 0,
-      "maximum": 18446744073709551615,
+      "maximum": "18446744073709551615",
       "examples": [
         "10000",
         "100000"

@@ -15,8 +15,9 @@ export interface ConfigOption {
   flagSet?: boolean;
   examples?: string[];
   platforms?: Platform[];
-  minimum?: number;
-  maximum?: number;
+  /** Bounds are strings where the value exceeds what a double holds exactly, e.g. u64. */
+  minimum?: number | string;
+  maximum?: number | string;
   /** Non-numeric values a numeric option also accepts, e.g. 'unlimited'. */
   allowedLiterals?: string[];
   /** Reject fractional values and unit suffixes; Ghostty parses these with parseInt. */
