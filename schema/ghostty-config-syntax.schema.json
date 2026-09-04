@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Ghostty terminal configuration schema",
   "repeatableKeys": [
     "font-family",
@@ -27,11 +27,14 @@
   ],
   "options": {
     "abnormal-command-exit-runtime": {
-      "type": "duration",
-      "description": "How long to keep terminal open after abnormal command exit.",
+      "type": "number",
+      "description": "Runtime in milliseconds below which a process exit is treated as abnormal, showing an error message. On Linux this must be paired with a non-zero exit code.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": 4294967295,
       "examples": [
-        "2s",
-        "5000ms"
+        "250",
+        "5000"
       ]
     },
     "adjust-box-thickness": {
@@ -410,6 +413,9 @@
     "click-repeat-interval": {
       "type": "number",
       "description": "Interval for click repeat detection in milliseconds. 0 = platform default.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": 4294967295,
       "examples": [
         "0",
         "300",
@@ -475,6 +481,20 @@
         "ask"
       ]
     },
+    "clipboard-write-limit-bytes": {
+      "type": "number",
+      "description": "Maximum size in bytes of a single clipboard write via the Kitty clipboard protocol (OSC 5522). Does not apply to OSC 52. Defaults to 64 MiB. Use 'unlimited' to remove the limit, or 0 to reject every non-empty write.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": "18446744073709551615",
+      "examples": [
+        "67108864",
+        "0"
+      ],
+      "allowedLiterals": [
+        "unlimited"
+      ]
+    },
     "command": {
       "type": "string",
       "description": "Command to run in the terminal. Supports arguments.",
@@ -524,16 +544,20 @@
     },
     "copy-on-select": {
       "type": "enum",
-      "description": "Whether to copy text on selection.",
+      "description": "Whether to automatically copy selected text to the clipboard. 'primary' targets the selection clipboard (Linux only), 'clipboard' the system clipboard, 'both' targets both. 'true' and 'false' are legacy aliases kept for backwards compatibility: 'true' means primary on Linux and clipboard on macOS, 'false' means none.",
       "enum": [
+        "none",
+        "primary",
+        "clipboard",
+        "both",
         "true",
-        "false",
-        "clipboard"
+        "false"
       ],
       "examples": [
-        "true",
-        "false",
-        "clipboard"
+        "clipboard",
+        "primary",
+        "both",
+        "false"
       ]
     },
     "cursor-click-to-move": {
@@ -622,6 +646,20 @@
       "examples": [
         "true",
         "false"
+      ]
+    },
+    "drag-handle": {
+      "type": "enum",
+      "description": "When drag handles are shown over splits, allowing splits to be rearranged with the mouse. 'auto' shows the handle on Linux only when two or more splits exist, and on macOS whenever hovered outside single-split fullscreen.",
+      "enum": [
+        "always",
+        "auto",
+        "never"
+      ],
+      "examples": [
+        "auto",
+        "always",
+        "never"
       ]
     },
     "enquiry-response": {
@@ -793,6 +831,7 @@
     "font-thicken-strength": {
       "type": "number",
       "description": "Strength of font thickening.",
+      "integer": true,
       "minimum": 0,
       "maximum": 255,
       "platforms": [
@@ -922,6 +961,17 @@
         "cairo"
       ],
       "deprecated": "Removed. No longer a configurable option."
+    },
+    "gtk-horizontal-tab-scroll": {
+      "type": "boolean",
+      "description": "Whether two-finger horizontal scrolling on a touchpad switches between tabs.",
+      "platforms": [
+        "linux"
+      ],
+      "examples": [
+        "true",
+        "false"
+      ]
     },
     "gtk-opengl-debug": {
       "type": "boolean",
@@ -1060,6 +1110,9 @@
     "image-storage-limit": {
       "type": "number",
       "description": "Limit for image storage in bytes. Max 4GiB, 0 = disabled.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": 4294967295,
       "examples": [
         "320000000",
         "0"
@@ -1128,6 +1181,14 @@
         "regex:(file://[^ ]+) action:open"
       ]
     },
+    "link-osc8": {
+      "type": "boolean",
+      "description": "Enable hyperlinks created with the OSC 8 escape sequence. When disabled, OSC 8 hyperlinks are not highlighted, previewed, copied, or opened. Does not affect URL matching controlled by link-url.",
+      "examples": [
+        "true",
+        "false"
+      ]
+    },
     "link-previews": {
       "type": "enum",
       "description": "Whether to show link previews.",
@@ -1174,6 +1235,9 @@
     "linux-cgroup-memory-limit": {
       "type": "number",
       "description": "Memory limit for Linux cgroup.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": "18446744073709551615",
       "platforms": [
         "linux"
       ],
@@ -1185,6 +1249,9 @@
     "linux-cgroup-processes-limit": {
       "type": "number",
       "description": "Process limit for Linux cgroup.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": "18446744073709551615",
       "platforms": [
         "linux"
       ],
@@ -1452,13 +1519,15 @@
     },
     "middle-click-action": {
       "type": "enum",
-      "description": "The action to take when the user middle-clicks on the terminal surface. 'primary-paste' pastes from the selection (or system) clipboard per copy-on-select; 'ignore' does nothing.",
+      "description": "Action taken when the user middle-clicks the terminal surface. 'primary-paste' pastes from the selection clipboard on Linux and does nothing on macOS, 'clipboard-paste' pastes from the standard clipboard, 'ignore' does nothing.",
       "enum": [
         "primary-paste",
+        "clipboard-paste",
         "ignore"
       ],
       "examples": [
         "primary-paste",
+        "clipboard-paste",
         "ignore"
       ]
     },
@@ -1780,12 +1849,55 @@
         "no-output"
       ]
     },
+    "scrollback-compression": {
+      "type": "boolean",
+      "description": "Whether to compress scrollback pages while the terminal is idle. Reduces physical memory usage without changing how much history is retained.",
+      "examples": [
+        "true",
+        "false"
+      ]
+    },
     "scrollback-limit": {
       "type": "number",
-      "description": "Size of scrollback buffer in bytes.",
+      "description": "Size of the scrollback buffer in bytes. Renamed upstream; the value is forwarded to scrollback-limit-bytes.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": "18446744073709551615",
+      "deprecated": "Deprecated since 1.4. Use scrollback-limit-bytes instead.",
       "examples": [
         "10000000",
         "50000000"
+      ],
+      "allowedLiterals": [
+        "unlimited"
+      ]
+    },
+    "scrollback-limit-bytes": {
+      "type": "number",
+      "description": "Size of the scrollback buffer in bytes, per terminal surface, including the active screen. Defaults to 50 MB. Use 'unlimited' to remove the byte limit. If scrollback-limit-lines is also set, the first limit reached wins.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": "18446744073709551615",
+      "examples": [
+        "50000000",
+        "10000000"
+      ],
+      "allowedLiterals": [
+        "unlimited"
+      ]
+    },
+    "scrollback-limit-lines": {
+      "type": "number",
+      "description": "Maximum number of scrollback lines to retain, excluding the active screen. Soft-wrapped lines count as multiple lines. The limit is an estimate as Ghostty trims whole pages. Defaults to 'unlimited'.",
+      "integer": true,
+      "minimum": 0,
+      "maximum": "18446744073709551615",
+      "examples": [
+        "10000",
+        "100000"
+      ],
+      "allowedLiterals": [
+        "unlimited"
       ]
     },
     "scrollbar": {
@@ -2072,7 +2184,9 @@
     "window-height": {
       "type": "number",
       "description": "Initial window height in cells. Minimum 4.",
+      "integer": true,
       "minimum": 4,
+      "maximum": 4294967295,
       "examples": [
         "24",
         "30",
@@ -2147,6 +2261,9 @@
     "window-position-x": {
       "type": "number",
       "description": "Initial window X position in pixels.",
+      "integer": true,
+      "minimum": -32768,
+      "maximum": 32767,
       "platforms": [
         "macos"
       ],
@@ -2158,6 +2275,9 @@
     "window-position-y": {
       "type": "number",
       "description": "Initial window Y position in pixels.",
+      "integer": true,
+      "minimum": -32768,
+      "maximum": 32767,
       "platforms": [
         "macos"
       ],
@@ -2285,7 +2405,9 @@
     "window-width": {
       "type": "number",
       "description": "Initial window width in cells. Minimum 10.",
+      "integer": true,
       "minimum": 10,
+      "maximum": 4294967295,
       "examples": [
         "80",
         "120",
@@ -2418,7 +2540,10 @@
         "undo",
         "redo",
         "quit",
-        "crash"
+        "crash",
+        "move_tab_to_new_window",
+        "prompt_window_title",
+        "set_window_title"
       ]
     },
     "color": {
@@ -2460,9 +2585,9 @@
       ]
     },
     "duration": {
-      "description": "Duration with optional unit (y, d, h, m, s, ms, us, ns)",
+      "description": "One or more whole-number components, each with a unit (y, w, d, h, m, s, ms, us, µs, ns), such as '500ms' or '1h30m'. A unit-less number is only valid when it is zero.",
       "patterns": [
-        "^-?\\d+(\\.\\d+)?(y|d|h|m|s|ms|us|µs|ns)?$"
+        "^\\s*(?:\\d+(?:ms|µs|us|ns|y|w|d|h|m|s)\\s*)*(?:\\d+(?:ms|µs|us|ns|y|w|d|h|m|s)|0+)\\s*$"
       ]
     }
   }

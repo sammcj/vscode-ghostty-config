@@ -16,6 +16,129 @@ const NAMED_COLORS = new Set([
 
 const BOOLEAN_VALUES = new Set(['true', 'false', 'yes', 'no', 'on', 'off']);
 
+// Ghostty parses integer options with Zig's parseInt at base 0, which accepts
+// 0x/0o/0b prefixes and _ digit separators. parseInt skips every interior
+// underscore, so runs of them are fine; only a leading or trailing one, or one
+// straight after the radix prefix, is rejected.
+const INTEGER_REGEX =
+  /^[+-]?(?:0[xX][0-9a-fA-F](?:_*[0-9a-fA-F])*|0[oO][0-7](?:_*[0-7])*|0[bB][01](?:_*[01])*|\d(?:_*\d)*)$/;
+/** Base-10 integers only, as Zig's parseInt is called with an explicit base 10. */
+const DECIMAL_INTEGER_REGEX = /^[+-]?\d(?:_*\d)*$/;
+
+// Floats go through Zig's parseFloat, which also takes inf/nan and hex floats.
+// Unlike parseInt, parseFloat requires every underscore to sit between two
+// digits, so a run of them is invalid here.
+const DECIMAL_REGEX =
+  /^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?$/;
+// Digits are only required on one side of the radix point, so 0x.8p0 and 0x8.p0
+// both parse, mirroring the decimal form.
+const HEX_FLOAT_REGEX =
+  /^[+-]?0[xX](?:[0-9a-fA-F](?:_?[0-9a-fA-F])*(?:\.(?:[0-9a-fA-F](?:_?[0-9a-fA-F])*)?)?|\.[0-9a-fA-F](?:_?[0-9a-fA-F])*)(?:[pP][+-]?\d(?:_?\d)*)?$/;
+const NON_FINITE_REGEX = /^[+-]?(?:inf(?:inity)?|nan)$/i;
+
+// Metrics.Modifier parses its bare form into an i32.
+const I32_MIN = -2147483648n;
+const I32_MAX = 2147483647n;
+
+// Each component of a duration is parsed into a u64 before the total is
+// accumulated with saturating arithmetic, so an oversized component fails the
+// whole value even though an oversized total does not.
+const U64_MAX = 18446744073709551615n;
+const DURATION_COMPONENT = '\\d+(?:ms|µs|us|ns|y|w|d|h|m|s)';
+const DURATION_REGEX = new RegExp(
+  `^\\s*(?:${DURATION_COMPONENT}\\s*)*(?:${DURATION_COMPONENT}|0+)\\s*$`
+);
+
+function isFloatShaped(value: string): boolean {
+  return DECIMAL_REGEX.test(value) || HEX_FLOAT_REGEX.test(value) || NON_FINITE_REGEX.test(value);
+}
+
+/**
+ * Resolves a value already matched by INTEGER_REGEX. BigInt reads the same
+ * 0x/0o/0b prefixes as Zig, but not underscores or a leading plus.
+ */
+function integerValue(value: string): bigint | null {
+  // BigInt rejects a sign in front of a radix prefix, so apply it separately.
+  const unsigned = value.replace(/_/g, '').replace(/^[+-]/, '');
+  try {
+    const magnitude = BigInt(unsigned);
+    return value.startsWith('-') ? -magnitude : magnitude;
+  } catch {
+    return null;
+  }
+}
+
+/** Keeps a pathological value from filling the diagnostic. */
+function forMessage(value: string): string {
+  return value.length > 24 ? `${value.slice(0, 24)}...` : value;
+}
+
+/** Bounds are authored as whole numbers; anything else is not comparable. */
+function boundAsBigInt(bound: number | string): bigint | null {
+  try {
+    return BigInt(bound);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Decodes a Zig hex float. `Number` handles a bare `0x` integer but returns
+ * NaN once there is a hex fraction or a `p` exponent.
+ */
+function hexFloatValue(unsigned: string): number | null {
+  const parts = /^0[xX]([0-9a-fA-F]*)(?:\.([0-9a-fA-F]*))?(?:[pP]([+-]?\d+))?$/.exec(unsigned);
+  if (!parts) {
+    return null;
+  }
+
+  const [, whole, fraction = '', exponent = '0'] = parts;
+  if (whole === '' && fraction === '') {
+    return null;
+  }
+
+  // Read the digits as one integer and pay for the radix point in the
+  // exponent, so a long mantissa cannot overflow before the exponent pulls it
+  // back into range.
+  let mantissa = BigInt(`0x${whole}${fraction}`);
+  if (mantissa === 0n) {
+    return 0;
+  }
+
+  let scale = Number(exponent) - 4 * fraction.length;
+
+  // A double keeps 53 bits, so shed anything below that and charge the
+  // exponent for it rather than letting Number() saturate to Infinity.
+  const bits = mantissa.toString(2).length;
+  if (bits > 64) {
+    mantissa >>= BigInt(bits - 64);
+    scale += bits - 64;
+  }
+
+  return Number(mantissa) * 2 ** scale;
+}
+
+/**
+ * Resolves an already shape-checked value, or null for inf/nan, which Ghostty
+ * accepts and which no bound meaningfully constrains. A value that overflows a
+ * double still resolves to Infinity so that bounds reject it.
+ */
+function numericValue(value: string): number | null {
+  const normalised = value.replace(/_/g, '');
+  if (NON_FINITE_REGEX.test(normalised)) {
+    return null;
+  }
+
+  const negative = normalised.startsWith('-');
+  const unsigned = normalised.replace(/^[+-]/, '');
+  const magnitude = HEX_FLOAT_REGEX.test(unsigned) ? hexFloatValue(unsigned) : Number(unsigned);
+
+  if (magnitude === null || Number.isNaN(magnitude)) {
+    return null;
+  }
+  return negative ? -magnitude : magnitude;
+}
+
 export function validateValue(
   schema: GhosttySchema,
   key: string,
@@ -73,33 +196,85 @@ export function validateBoolean(value: string): ValidationResult {
 }
 
 export function validateNumber(value: string, option?: ConfigOption): ValidationResult {
-  const num = parseFloat(value);
-  if (isNaN(num)) {
+  const literals = option?.allowedLiterals;
+  if (literals?.includes(value)) {
+    return { isValid: true };
+  }
+
+  const isInteger = option?.integer === true;
+  // parseFloat/parseInt ignore trailing text, so '50MB' would otherwise pass.
+  if (!(isInteger ? INTEGER_REGEX.test(value) : isFloatShaped(value))) {
+    const kind = isInteger ? 'whole number' : 'number';
+    const expected = literals?.length
+      ? `. Expected a ${kind} or one of: ${literals.join(', ')}`
+      : `. Expected a ${kind}`;
     return {
       isValid: false,
-      message: `Invalid number: '${value}'`,
+      message: `Invalid value: '${value}'${expected}`,
       severity: 'error',
     };
   }
 
-  if (option) {
-    if (option.minimum !== undefined && num < option.minimum) {
-      return {
-        isValid: false,
-        message: `Value ${num} is below minimum ${option.minimum}`,
-        severity: 'error',
-      };
-    }
+  return checkBounds(value, option, isInteger);
+}
 
-    if (option.maximum !== undefined && num > option.maximum) {
-      return {
-        isValid: false,
-        message: `Value ${num} is above maximum ${option.maximum}`,
-        severity: 'error',
-      };
-    }
+/**
+ * Integer options are compared as BigInt so that values beyond a double's
+ * exact range, such as a u64 ceiling or an absurdly long digit string, are
+ * still bounded correctly.
+ */
+function checkBounds(
+  value: string,
+  option: ConfigOption | undefined,
+  isInteger: boolean
+): ValidationResult {
+  if (!option || (option.minimum === undefined && option.maximum === undefined)) {
+    return { isValid: true };
   }
 
+  const below = (min: number | string) =>
+    ({
+      isValid: false,
+      message: `Value ${forMessage(value)} is below minimum ${min}`,
+      severity: 'error',
+    }) as const;
+  const above = (max: number | string) =>
+    ({
+      isValid: false,
+      message: `Value ${forMessage(value)} is above maximum ${max}`,
+      severity: 'error',
+    }) as const;
+
+  if (isInteger) {
+    const num = integerValue(value);
+    if (num === null) {
+      return { isValid: true };
+    }
+
+    const min = option.minimum !== undefined ? boundAsBigInt(option.minimum) : null;
+    if (min !== null && num < min) {
+      return below(option.minimum as number | string);
+    }
+
+    const max = option.maximum !== undefined ? boundAsBigInt(option.maximum) : null;
+    if (max !== null && num > max) {
+      return above(option.maximum as number | string);
+    }
+    return { isValid: true };
+  }
+
+  // inf/nan and hex floats have no finite value to bound, and Ghostty accepts
+  // them, so there is nothing to report.
+  const num = numericValue(value);
+  if (num === null) {
+    return { isValid: true };
+  }
+  if (option.minimum !== undefined && num < Number(option.minimum)) {
+    return below(option.minimum);
+  }
+  if (option.maximum !== undefined && num > Number(option.maximum)) {
+    return above(option.maximum);
+  }
   return { isValid: true };
 }
 
@@ -238,31 +413,53 @@ function validatePath(value: string): ValidationResult {
 }
 
 function validatePercentage(value: string): ValidationResult {
-  // Can be a number or number with %
-  const cleanValue = value.endsWith('%') ? value.slice(0, -1) : value;
-  const num = parseFloat(cleanValue);
-
-  if (isNaN(num)) {
-    return {
-      isValid: false,
-      message: `Invalid percentage/number: '${value}'`,
-      severity: 'error',
-    };
-  }
-
-  return { isValid: true };
-}
-
-function validateDuration(value: string): ValidationResult {
-  // Duration format: number with optional unit (y, d, h, m, s, ms, us, µs, ns)
-  const durationRegex = /^-?\d+(\.\d+)?(y|d|h|m|s|ms|us|µs|ns)?$/;
-  if (durationRegex.test(value)) {
+  // Ghostty's Metrics.Modifier reads a trailing % as a float delta, and any
+  // other value as a base-10 integer.
+  if (value.endsWith('%')) {
+    if (isFloatShaped(value.slice(0, -1))) {
+      return { isValid: true };
+    }
+  } else if (DECIMAL_INTEGER_REGEX.test(value)) {
+    const num = integerValue(value);
+    if (num !== null && (num < I32_MIN || num > I32_MAX)) {
+      return {
+        isValid: false,
+        message: `Adjustment ${forMessage(value)} is outside the range ${I32_MIN} to ${I32_MAX}`,
+        severity: 'error',
+      };
+    }
     return { isValid: true };
   }
 
   return {
     isValid: false,
-    message: `Invalid duration: '${value}'. Expected number with optional unit (s, ms, etc.)`,
+    message: `Invalid adjustment: '${value}'. Expected a whole number, or a percentage such as '10%'`,
+    severity: 'error',
+  };
+}
+
+function validateDuration(value: string): ValidationResult {
+  // Ghostty consumes <unsigned><unit> components in a loop, so '1h30m' is one
+  // duration. Units must follow their number directly; ms/µs/us/ns come first
+  // in the alternation so 'm' does not win against 'ms'. A unit-less number is
+  // only accepted when it is zero, where the unit would not change the result,
+  // and it ends the parse.
+  if (DURATION_REGEX.test(value)) {
+    for (const digits of value.match(/\d+/g) ?? []) {
+      if (BigInt(digits) > U64_MAX) {
+        return {
+          isValid: false,
+          message: `Duration component '${forMessage(digits)}' is above the maximum ${U64_MAX}`,
+          severity: 'error',
+        };
+      }
+    }
+    return { isValid: true };
+  }
+
+  return {
+    isValid: false,
+    message: `Invalid duration: '${value}'. Expected a whole number with a unit (y, w, d, h, m, s, ms, us, ns), such as '500ms' or '1h30m'`,
     severity: 'error',
   };
 }

@@ -76,6 +76,10 @@ export class GhosttyHoverProvider implements vscode.HoverProvider {
       md.appendMarkdown(`**Range:** ${range.join(', ')}\n\n`);
     }
 
+    if (option.allowedLiterals && option.allowedLiterals.length > 0) {
+      md.appendMarkdown(`**Also accepts:** \`${option.allowedLiterals.join('`, `')}\`\n\n`);
+    }
+
     if (option.examples && option.examples.length > 0) {
       md.appendMarkdown(`**Examples:**\n`);
       for (const ex of option.examples) {
@@ -122,7 +126,11 @@ export class GhosttyHoverProvider implements vscode.HoverProvider {
         return this.getEnumHover(key, value, option.enum || []);
       default:
         md.appendMarkdown(`**Value:** \`${value}\`\n\n`);
-        md.appendMarkdown(`**Type:** ${option.type}`);
+        if (option.allowedLiterals?.includes(value)) {
+          md.appendMarkdown(`Special value accepted by this ${option.type} option.`);
+        } else {
+          md.appendMarkdown(`**Type:** ${option.type}`);
+        }
         return new vscode.Hover(md);
     }
   }

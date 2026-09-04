@@ -248,17 +248,29 @@ export class GhosttyCompletionProvider implements vscode.CompletionItemProvider 
   }
 
   private getExampleCompletions(option: ConfigOption, partial: string): vscode.CompletionItem[] {
-    if (!option.examples || option.examples.length === 0) {
-      return [];
-    }
+    const matches = (v: string) => !partial || v.toLowerCase().includes(partial);
 
-    return option.examples
-      .filter(ex => !partial || ex.toLowerCase().includes(partial))
+    // VSCode orders by sortText, so the prefixes are what actually put the
+    // special literals above the examples.
+    const literals = (option.allowedLiterals ?? [])
+      .filter(matches)
+      .map(v => {
+        const item = new vscode.CompletionItem(v, vscode.CompletionItemKind.Constant);
+        item.detail = 'Literal value';
+        item.sortText = `0_${v}`;
+        return item;
+      });
+
+    const examples = (option.examples ?? [])
+      .filter(matches)
       .map(ex => {
         const item = new vscode.CompletionItem(ex, vscode.CompletionItemKind.Value);
         item.detail = 'Example value';
+        item.sortText = `1_${ex}`;
         return item;
       });
+
+    return [...literals, ...examples];
   }
 
   private getTypeLabel(option: ConfigOption): string {
