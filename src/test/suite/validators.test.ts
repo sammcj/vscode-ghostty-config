@@ -151,6 +151,23 @@ suite('Validators', () => {
       assert.strictEqual(validateNumber('0xZZ', option).isValid, false);
     });
 
+    test('separates integer and float underscore rules as Zig does', () => {
+      // parseInt skips every interior underscore, so a run of them is fine.
+      const integer: ConfigOption = { type: 'number', description: '', integer: true };
+      assert.strictEqual(validateNumber('1__000', integer).isValid, true);
+      assert.strictEqual(validateNumber('0x1__f', integer).isValid, true);
+      assert.strictEqual(validateNumber('_1000', integer).isValid, false);
+      assert.strictEqual(validateNumber('1000_', integer).isValid, false);
+      // An underscore straight after the radix prefix lands first in the slice.
+      assert.strictEqual(validateNumber('0x_1f', integer).isValid, false);
+
+      // parseFloat instead requires each underscore to sit between two digits.
+      const float: ConfigOption = { type: 'number', description: '' };
+      assert.strictEqual(validateNumber('1_0.5', float).isValid, true);
+      assert.strictEqual(validateNumber('1__0.5', float).isValid, false);
+      assert.strictEqual(validateNumber('0x1__f.8p0', float).isValid, false);
+    });
+
     test('range checks understand base-0 forms', () => {
       const option: ConfigOption = {
         type: 'number',
@@ -201,6 +218,15 @@ suite('Validators', () => {
       assert.strictEqual(validateNumber('0x2p0', option).isValid, false); // 2
       assert.strictEqual(validateNumber('0x1.8p1', option).isValid, false); // 3
       assert.strictEqual(validateNumber('-0x1p0', option).isValid, false); // -1
+
+      // Digits are only required on one side of the radix point.
+      assert.strictEqual(validateNumber('0x.8p0', option).isValid, true); // 0.5
+      assert.strictEqual(validateNumber('0x8.p0', option).isValid, false); // 8
+      assert.strictEqual(validateNumber('0x.p0', option).isValid, false);
+
+      // A long mantissa must not overflow before its exponent scales it back.
+      assert.strictEqual(validateNumber(`0x${'f'.repeat(400)}p-1598`, option).isValid, false); // ~4
+      assert.strictEqual(validateNumber(`0x${'f'.repeat(400)}p-1600`, option).isValid, true); // ~1
     });
 
     test('rejects trailing text on non-integer options', () => {
@@ -385,17 +411,62 @@ suite('Validators', () => {
       assert.strictEqual(check('5ms').isValid, true);
     });
 
-    test('accepts a bare zero only', () => {
+    test('accepts a unit-less number only when it is zero', () => {
       assert.strictEqual(check('0').isValid, true);
+      assert.strictEqual(check('00').isValid, true);
       assert.strictEqual(check('500').isValid, false);
+      assert.strictEqual(check('1ms1').isValid, false);
     });
 
-    test('rejects negatives, fractions and unknown units', () => {
+    test('accepts a trailing unit-less zero after real components', () => {
+      // Ghostty's loop takes it and resets the total, so it parses even though
+      // the result is 0 rather than the components before it.
+      assert.strictEqual(check('1s0').isValid, true);
+      assert.strictEqual(check('1s 0').isValid, true);
+      assert.strictEqual(check('1s00').isValid, true);
+    });
+
+    test('rejects a component above u64', () => {
+      assert.strictEqual(check('18446744073709551615ns').isValid, true);
+
+      const overflow = check('18446744073709551616ns');
+      assert.strictEqual(overflow.isValid, false);
+      assert.ok(overflow.message?.includes('above the maximum'));
+
+      // The total still saturates rather than failing.
+      assert.strictEqual(check('600y').isValid, true);
+    });
+
+    test('rejects negatives, fractions, separators and unknown units', () => {
       assert.strictEqual(check('-5s').isValid, false);
       assert.strictEqual(check('1.5s').isValid, false);
       assert.strictEqual(check('5years').isValid, false);
       assert.strictEqual(check('1 h').isValid, false);
       assert.strictEqual(check('abc').isValid, false);
+      // The incremental prefix parse stops at the underscore, leaving digits
+      // where a unit has to be.
+      assert.strictEqual(check('1_000ms').isValid, false);
+      assert.strictEqual(check('0x10s').isValid, false);
+      assert.strictEqual(check('1S').isValid, false);
+    });
+
+    test('matches the reusable duration pattern in the schema', () => {
+      const realSchema = loadSchemaFromPath(
+        path.join(__dirname, '../../../schema/ghostty-config-syntax.schema.json')
+      );
+      const pattern = new RegExp(realSchema.types['duration'].patterns?.[0] ?? '');
+      const samples = [
+        '500ms', '1h30m', '1m 30s', '3µs', '0', '00', '1s0',
+        '500', '-5s', '1.5s', '1 h', '5years', '1_000ms', 'abc',
+      ];
+
+      for (const value of samples) {
+        assert.strictEqual(
+          pattern.test(value),
+          check(value).isValid,
+          `schema pattern and validator disagree on '${value}'`
+        );
+      }
     });
   });
 
@@ -439,6 +510,12 @@ suite('Validators', () => {
       // Metrics.Modifier parses the bare form at base 10, so 0x is not a number.
       assert.strictEqual(check('1_000').isValid, true);
       assert.strictEqual(check('0x10').isValid, false);
+
+      // parseInt skips runs of underscores; the percent form uses parseFloat,
+      // which needs a digit on each side of every one.
+      assert.strictEqual(check('1__000').isValid, true);
+      assert.strictEqual(check('1_0%').isValid, true);
+      assert.strictEqual(check('1__0%').isValid, false);
     });
   });
 });

@@ -2585,9 +2585,9 @@
       ]
     },
     "duration": {
-      "description": "Duration with optional unit (y, d, h, m, s, ms, us, ns)",
+      "description": "One or more whole-number components, each with a unit (y, w, d, h, m, s, ms, us, µs, ns), such as '500ms' or '1h30m'. A unit-less number is only valid when it is zero.",
       "patterns": [
-        "^-?\\d+(\\.\\d+)?(y|d|h|m|s|ms|us|µs|ns)?$"
+        "^\\s*(?:\\d+(?:ms|µs|us|ns|y|w|d|h|m|s)\\s*)*(?:\\d+(?:ms|µs|us|ns|y|w|d|h|m|s)|0+)\\s*$"
       ]
     }
   }

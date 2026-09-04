@@ -17,22 +17,37 @@ const NAMED_COLORS = new Set([
 const BOOLEAN_VALUES = new Set(['true', 'false', 'yes', 'no', 'on', 'off']);
 
 // Ghostty parses integer options with Zig's parseInt at base 0, which accepts
-// 0x/0o/0b prefixes and _ digit separators.
+// 0x/0o/0b prefixes and _ digit separators. parseInt skips every interior
+// underscore, so runs of them are fine; only a leading or trailing one, or one
+// straight after the radix prefix, is rejected.
 const INTEGER_REGEX =
-  /^[+-]?(?:0[xX][0-9a-fA-F](?:_?[0-9a-fA-F])*|0[oO][0-7](?:_?[0-7])*|0[bB][01](?:_?[01])*|\d(?:_?\d)*)$/;
+  /^[+-]?(?:0[xX][0-9a-fA-F](?:_*[0-9a-fA-F])*|0[oO][0-7](?:_*[0-7])*|0[bB][01](?:_*[01])*|\d(?:_*\d)*)$/;
 /** Base-10 integers only, as Zig's parseInt is called with an explicit base 10. */
-const DECIMAL_INTEGER_REGEX = /^[+-]?\d(?:_?\d)*$/;
+const DECIMAL_INTEGER_REGEX = /^[+-]?\d(?:_*\d)*$/;
 
 // Floats go through Zig's parseFloat, which also takes inf/nan and hex floats.
+// Unlike parseInt, parseFloat requires every underscore to sit between two
+// digits, so a run of them is invalid here.
 const DECIMAL_REGEX =
   /^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?$/;
+// Digits are only required on one side of the radix point, so 0x.8p0 and 0x8.p0
+// both parse, mirroring the decimal form.
 const HEX_FLOAT_REGEX =
-  /^[+-]?0[xX][0-9a-fA-F](?:_?[0-9a-fA-F])*(?:\.(?:[0-9a-fA-F](?:_?[0-9a-fA-F])*)?)?(?:[pP][+-]?\d(?:_?\d)*)?$/;
+  /^[+-]?0[xX](?:[0-9a-fA-F](?:_?[0-9a-fA-F])*(?:\.(?:[0-9a-fA-F](?:_?[0-9a-fA-F])*)?)?|\.[0-9a-fA-F](?:_?[0-9a-fA-F])*)(?:[pP][+-]?\d(?:_?\d)*)?$/;
 const NON_FINITE_REGEX = /^[+-]?(?:inf(?:inity)?|nan)$/i;
 
 // Metrics.Modifier parses its bare form into an i32.
 const I32_MIN = -2147483648n;
 const I32_MAX = 2147483647n;
+
+// Each component of a duration is parsed into a u64 before the total is
+// accumulated with saturating arithmetic, so an oversized component fails the
+// whole value even though an oversized total does not.
+const U64_MAX = 18446744073709551615n;
+const DURATION_COMPONENT = '\\d+(?:ms|µs|us|ns|y|w|d|h|m|s)';
+const DURATION_REGEX = new RegExp(
+  `^\\s*(?:${DURATION_COMPONENT}\\s*)*(?:${DURATION_COMPONENT}|0+)\\s*$`
+);
 
 function isFloatShaped(value: string): boolean {
   return DECIMAL_REGEX.test(value) || HEX_FLOAT_REGEX.test(value) || NON_FINITE_REGEX.test(value);
@@ -82,11 +97,25 @@ function hexFloatValue(unsigned: string): number | null {
     return null;
   }
 
-  let mantissa = whole === '' ? 0 : parseInt(whole, 16);
-  for (let i = 0; i < fraction.length; i++) {
-    mantissa += parseInt(fraction[i], 16) / 16 ** (i + 1);
+  // Read the digits as one integer and pay for the radix point in the
+  // exponent, so a long mantissa cannot overflow before the exponent pulls it
+  // back into range.
+  let mantissa = BigInt(`0x${whole}${fraction}`);
+  if (mantissa === 0n) {
+    return 0;
   }
-  return mantissa * 2 ** Number(exponent);
+
+  let scale = Number(exponent) - 4 * fraction.length;
+
+  // A double keeps 53 bits, so shed anything below that and charge the
+  // exponent for it rather than letting Number() saturate to Infinity.
+  const bits = mantissa.toString(2).length;
+  if (bits > 64) {
+    mantissa >>= BigInt(bits - 64);
+    scale += bits - 64;
+  }
+
+  return Number(mantissa) * 2 ** scale;
 }
 
 /**
@@ -412,11 +441,19 @@ function validatePercentage(value: string): ValidationResult {
 function validateDuration(value: string): ValidationResult {
   // Ghostty consumes <unsigned><unit> components in a loop, so '1h30m' is one
   // duration. Units must follow their number directly; ms/µs/us/ns come first
-  // in the alternation so 'm' does not win against 'ms'.
-  const durationRegex = /^(?:\d+(?:ms|µs|us|ns|y|w|d|h|m|s)\s*)+$/;
-
-  // A bare number is only valid when it is zero, where the unit is unambiguous.
-  if (value === '0' || durationRegex.test(value)) {
+  // in the alternation so 'm' does not win against 'ms'. A unit-less number is
+  // only accepted when it is zero, where the unit would not change the result,
+  // and it ends the parse.
+  if (DURATION_REGEX.test(value)) {
+    for (const digits of value.match(/\d+/g) ?? []) {
+      if (BigInt(digits) > U64_MAX) {
+        return {
+          isValid: false,
+          message: `Duration component '${forMessage(digits)}' is above the maximum ${U64_MAX}`,
+          severity: 'error',
+        };
+      }
+    }
     return { isValid: true };
   }
 
