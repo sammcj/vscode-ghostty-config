@@ -159,6 +159,7 @@
     "values": {
       "patterns": [
         { "include": "#quoted-string" },
+        { "include": "#prefixed-integer" },
         { "include": "#color-value" },
         { "include": "#boolean-value" },
         { "include": "#numeric-value" },
@@ -251,11 +252,32 @@
         }
       ]
     },
-    "numeric-value": {
+    "prefixed-integer": {
+      "comment": "Zig reads integers at base 0. These come before #color-value because a value such as 0b1010 is also six hex digits, and Ghostty colours are written #RRGGBB or RRGGBB, never 0x-prefixed.",
       "patterns": [
         {
           "name": "constant.numeric.integer.ghostty",
-          "match": "\\b-?[0-9]+\\b"
+          "match": "(?<![\\w.])[+-]?0[xX][0-9a-fA-F][0-9a-fA-F_]*(?![\\w.])"
+        },
+        {
+          "name": "constant.numeric.integer.ghostty",
+          "match": "(?<![\\w.])[+-]?0[oO][0-7][0-7_]*(?![\\w.])"
+        },
+        {
+          "name": "constant.numeric.integer.ghostty",
+          "match": "(?<![\\w.])[+-]?0[bB][01][01_]*(?![\\w.])"
+        }
+      ]
+    },
+    "numeric-value": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.ghostty",
+          "match": "(?<![\\w.])[+-]?[0-9][0-9_]*\\.[0-9][0-9_]*(?![\\w.])"
+        },
+        {
+          "name": "constant.numeric.integer.ghostty",
+          "match": "(?<![\\w.])[+-]?[0-9][0-9_]*(?![\\w.])"
         },
         {
           "name": "constant.numeric.float.ghostty",

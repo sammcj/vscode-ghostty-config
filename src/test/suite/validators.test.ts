@@ -174,6 +174,23 @@ suite('Validators', () => {
       assert.ok(tooBig.message?.includes('above maximum 10'));
     });
 
+    test('accepts the float forms Zig parseFloat takes', () => {
+      const option: ConfigOption = { type: 'number', description: '' };
+      assert.strictEqual(validateNumber('inf', option).isValid, true);
+      assert.strictEqual(validateNumber('-Infinity', option).isValid, true);
+      assert.strictEqual(validateNumber('nan', option).isValid, true);
+      assert.strictEqual(validateNumber('0x1p0', option).isValid, true);
+      assert.strictEqual(validateNumber('1e1_0', option).isValid, true);
+    });
+
+    test('skips range checks for values with no finite bound', () => {
+      // Ghostty accepts these, so flagging them against a bound would be a
+      // false positive.
+      const option: ConfigOption = { type: 'number', description: '', minimum: 0, maximum: 1 };
+      assert.strictEqual(validateNumber('inf', option).isValid, true);
+      assert.strictEqual(validateNumber('2', option).isValid, false);
+    });
+
     test('rejects trailing text on non-integer options', () => {
       const option: ConfigOption = { type: 'number', description: '' };
       assert.strictEqual(validateNumber('1.5', option).isValid, true);
@@ -208,6 +225,20 @@ suite('Validators', () => {
     test('still accepts fractions on float options', () => {
       assert.strictEqual(check('font-size', '13.5').isValid, true);
       assert.strictEqual(check('background-opacity', '0.9').isValid, true);
+    });
+
+    test('bounds integer options by their Ghostty type', () => {
+      assert.strictEqual(check('window-position-x', '-32768').isValid, true);
+      assert.strictEqual(check('window-position-x', '-32769').isValid, false);
+      assert.strictEqual(check('window-position-x', '32768').isValid, false);
+
+      assert.strictEqual(check('abnormal-command-exit-runtime', '4294967295').isValid, true);
+      assert.strictEqual(check('abnormal-command-exit-runtime', '4294967296').isValid, false);
+
+      // u32 and usize options are unsigned, so a negative is out of range.
+      assert.strictEqual(check('click-repeat-interval', '-1').isValid, false);
+      assert.strictEqual(check('linux-cgroup-memory-limit', '-1').isValid, false);
+      assert.strictEqual(check('font-thicken-strength', '256').isValid, false);
     });
 
     test('accepts the refreshed enum values', () => {
@@ -372,6 +403,19 @@ suite('Validators', () => {
       assert.strictEqual(check('10px').isValid, false);
       assert.strictEqual(check('abc').isValid, false);
       assert.strictEqual(check('%').isValid, false);
+    });
+
+    test('enforces the i32 range on the bare form', () => {
+      assert.strictEqual(check('2147483647').isValid, true);
+      assert.strictEqual(check('-2147483648').isValid, true);
+      assert.strictEqual(check('2147483648').isValid, false);
+      assert.strictEqual(check('-2147483649').isValid, false);
+    });
+
+    test('accepts digit separators and hex prefixes only where Ghostty does', () => {
+      // Metrics.Modifier parses the bare form at base 10, so 0x is not a number.
+      assert.strictEqual(check('1_000').isValid, true);
+      assert.strictEqual(check('0x10').isValid, false);
     });
   });
 });

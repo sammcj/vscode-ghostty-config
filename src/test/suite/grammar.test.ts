@@ -155,6 +155,30 @@ suite('TextMate grammar', () => {
     );
   });
 
+  test('scopes the integer forms the validator accepts', async () => {
+    const grammar = await loadGrammar();
+    const scopeOfValue = (line: string) => {
+      const at = line.indexOf('= ') + 2;
+      return grammar
+        .tokenizeLine(line, textmate.INITIAL)
+        .tokens.filter((t) => t.startIndex <= at && t.endIndex > at)
+        .flatMap((t) => t.scopes);
+    };
+
+    for (const value of ['0x4000000', '0o17', '0b1010', '50_000_000', '4096']) {
+      assert.ok(
+        scopeOfValue(`scrollback-limit-bytes = ${value}`).includes('constant.numeric.integer.ghostty'),
+        `expected ${value} to be scoped as an integer`
+      );
+    }
+
+    assert.ok(scopeOfValue('font-size = 13.5').includes('constant.numeric.float.ghostty'));
+
+    // #prefixed-integer sits before #color-value, so check colours still win.
+    assert.ok(scopeOfValue('background = 000000').includes('constant.other.color.hex.ghostty'));
+    assert.ok(scopeOfValue('background = #1a1a1a').includes('constant.other.color.hex.ghostty'));
+  });
+
   test('scopes the keybind clear directive', async () => {
     const grammar = await loadGrammar();
     const tokens = grammar.tokenizeLine('keybind = clear', textmate.INITIAL).tokens;

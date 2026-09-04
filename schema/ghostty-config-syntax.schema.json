@@ -31,6 +31,7 @@
       "description": "Runtime in milliseconds below which a process exit is treated as abnormal, showing an error message. On Linux this must be paired with a non-zero exit code.",
       "integer": true,
       "minimum": 0,
+      "maximum": 4294967295,
       "examples": [
         "250",
         "5000"
@@ -413,6 +414,8 @@
       "type": "number",
       "description": "Interval for click repeat detection in milliseconds. 0 = platform default.",
       "integer": true,
+      "minimum": 0,
+      "maximum": 4294967295,
       "examples": [
         "0",
         "300",
@@ -481,14 +484,15 @@
     "clipboard-write-limit-bytes": {
       "type": "number",
       "description": "Maximum size in bytes of a single clipboard write via the Kitty clipboard protocol (OSC 5522). Does not apply to OSC 52. Defaults to 64 MiB. Use 'unlimited' to remove the limit, or 0 to reject every non-empty write.",
-      "minimum": 0,
       "integer": true,
-      "allowedLiterals": [
-        "unlimited"
-      ],
+      "minimum": 0,
+      "maximum": 18446744073709551615,
       "examples": [
         "67108864",
         "0"
+      ],
+      "allowedLiterals": [
+        "unlimited"
       ]
     },
     "command": {
@@ -1107,6 +1111,8 @@
       "type": "number",
       "description": "Limit for image storage in bytes. Max 4GiB, 0 = disabled.",
       "integer": true,
+      "minimum": 0,
+      "maximum": 4294967295,
       "examples": [
         "320000000",
         "0"
@@ -1230,6 +1236,8 @@
       "type": "number",
       "description": "Memory limit for Linux cgroup.",
       "integer": true,
+      "minimum": 0,
+      "maximum": 18446744073709551615,
       "platforms": [
         "linux"
       ],
@@ -1242,6 +1250,8 @@
       "type": "number",
       "description": "Process limit for Linux cgroup.",
       "integer": true,
+      "minimum": 0,
+      "maximum": 18446744073709551615,
       "platforms": [
         "linux"
       ],
@@ -1850,41 +1860,44 @@
     "scrollback-limit": {
       "type": "number",
       "description": "Size of the scrollback buffer in bytes. Renamed upstream; the value is forwarded to scrollback-limit-bytes.",
-      "minimum": 0,
       "integer": true,
-      "allowedLiterals": [
-        "unlimited"
-      ],
+      "minimum": 0,
+      "maximum": 18446744073709551615,
       "deprecated": "Deprecated since 1.4. Use scrollback-limit-bytes instead.",
       "examples": [
         "10000000",
         "50000000"
+      ],
+      "allowedLiterals": [
+        "unlimited"
       ]
     },
     "scrollback-limit-bytes": {
       "type": "number",
       "description": "Size of the scrollback buffer in bytes, per terminal surface, including the active screen. Defaults to 50 MB. Use 'unlimited' to remove the byte limit. If scrollback-limit-lines is also set, the first limit reached wins.",
-      "minimum": 0,
       "integer": true,
-      "allowedLiterals": [
-        "unlimited"
-      ],
+      "minimum": 0,
+      "maximum": 18446744073709551615,
       "examples": [
         "50000000",
         "10000000"
+      ],
+      "allowedLiterals": [
+        "unlimited"
       ]
     },
     "scrollback-limit-lines": {
       "type": "number",
       "description": "Maximum number of scrollback lines to retain, excluding the active screen. Soft-wrapped lines count as multiple lines. The limit is an estimate as Ghostty trims whole pages. Defaults to 'unlimited'.",
-      "minimum": 0,
       "integer": true,
-      "allowedLiterals": [
-        "unlimited"
-      ],
+      "minimum": 0,
+      "maximum": 18446744073709551615,
       "examples": [
         "10000",
         "100000"
+      ],
+      "allowedLiterals": [
+        "unlimited"
       ]
     },
     "scrollbar": {
@@ -2173,6 +2186,7 @@
       "description": "Initial window height in cells. Minimum 4.",
       "integer": true,
       "minimum": 4,
+      "maximum": 4294967295,
       "examples": [
         "24",
         "30",
@@ -2248,6 +2262,8 @@
       "type": "number",
       "description": "Initial window X position in pixels.",
       "integer": true,
+      "minimum": -32768,
+      "maximum": 32767,
       "platforms": [
         "macos"
       ],
@@ -2260,6 +2276,8 @@
       "type": "number",
       "description": "Initial window Y position in pixels.",
       "integer": true,
+      "minimum": -32768,
+      "maximum": 32767,
       "platforms": [
         "macos"
       ],
@@ -2389,6 +2407,7 @@
       "description": "Initial window width in cells. Minimum 10.",
       "integer": true,
       "minimum": 10,
+      "maximum": 4294967295,
       "examples": [
         "80",
         "120",

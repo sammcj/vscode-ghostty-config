@@ -17,16 +17,39 @@ const NAMED_COLORS = new Set([
 const BOOLEAN_VALUES = new Set(['true', 'false', 'yes', 'no', 'on', 'off']);
 
 // Ghostty parses integer options with Zig's parseInt at base 0, which accepts
-// 0x/0o/0b prefixes and _ digit separators. Floats go through parseFloat.
+// 0x/0o/0b prefixes and _ digit separators.
 const INTEGER_REGEX =
   /^[+-]?(?:0[xX][0-9a-fA-F](?:_?[0-9a-fA-F])*|0[oO][0-7](?:_?[0-7])*|0[bB][01](?:_?[01])*|\d(?:_?\d)*)$/;
-const DECIMAL_REGEX = /^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d+)?$/;
+/** Base-10 integers only, as Zig's parseInt is called with an explicit base 10. */
+const DECIMAL_INTEGER_REGEX = /^[+-]?\d(?:_?\d)*$/;
 
-/** Resolves a value already matched by INTEGER_REGEX or DECIMAL_REGEX. */
-function numericValue(value: string): number {
+// Floats go through Zig's parseFloat, which also takes inf/nan and hex floats.
+const DECIMAL_REGEX =
+  /^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?$/;
+const HEX_FLOAT_REGEX =
+  /^[+-]?0[xX][0-9a-fA-F](?:_?[0-9a-fA-F])*(?:\.(?:[0-9a-fA-F](?:_?[0-9a-fA-F])*)?)?(?:[pP][+-]?\d(?:_?\d)*)?$/;
+const NON_FINITE_REGEX = /^[+-]?(?:inf(?:inity)?|nan)$/i;
+
+// Metrics.Modifier parses its bare form into an i32.
+const I32_MIN = -2147483648;
+const I32_MAX = 2147483647;
+
+function isFloatShaped(value: string): boolean {
+  return DECIMAL_REGEX.test(value) || HEX_FLOAT_REGEX.test(value) || NON_FINITE_REGEX.test(value);
+}
+
+/**
+ * Resolves an already shape-checked value, or null when it has no finite
+ * value to compare against a bound (inf/nan, or a hex float).
+ */
+function numericValue(value: string): number | null {
   const normalised = value.replace(/_/g, '');
   const negative = normalised.startsWith('-');
   const magnitude = Number(normalised.replace(/^[+-]/, ''));
+
+  if (!Number.isFinite(magnitude)) {
+    return null;
+  }
   return negative ? -magnitude : magnitude;
 }
 
@@ -94,7 +117,7 @@ export function validateNumber(value: string, option?: ConfigOption): Validation
 
   const isInteger = option?.integer === true;
   // parseFloat/parseInt ignore trailing text, so '50MB' would otherwise pass.
-  if (!(isInteger ? INTEGER_REGEX : DECIMAL_REGEX).test(value)) {
+  if (!(isInteger ? INTEGER_REGEX.test(value) : isFloatShaped(value))) {
     const kind = isInteger ? 'whole number' : 'number';
     const expected = literals?.length
       ? `. Expected a ${kind} or one of: ${literals.join(', ')}`
@@ -108,7 +131,9 @@ export function validateNumber(value: string, option?: ConfigOption): Validation
 
   const num = numericValue(value);
 
-  if (option) {
+  // inf/nan and hex floats have no finite value to bound, and Ghostty accepts
+  // them, so there is nothing to report.
+  if (option && num !== null) {
     if (option.minimum !== undefined && num < option.minimum) {
       return {
         isValid: false,
@@ -266,19 +291,27 @@ function validatePath(value: string): ValidationResult {
 function validatePercentage(value: string): ValidationResult {
   // Ghostty's Metrics.Modifier reads a trailing % as a float delta, and any
   // other value as a base-10 integer.
-  const valid = value.endsWith('%')
-    ? DECIMAL_REGEX.test(value.slice(0, -1))
-    : /^[+-]?\d+$/.test(value);
-
-  if (!valid) {
-    return {
-      isValid: false,
-      message: `Invalid adjustment: '${value}'. Expected a whole number, or a percentage such as '10%'`,
-      severity: 'error',
-    };
+  if (value.endsWith('%')) {
+    if (isFloatShaped(value.slice(0, -1))) {
+      return { isValid: true };
+    }
+  } else if (DECIMAL_INTEGER_REGEX.test(value)) {
+    const num = numericValue(value);
+    if (num !== null && (num < I32_MIN || num > I32_MAX)) {
+      return {
+        isValid: false,
+        message: `Adjustment ${num} is outside the range ${I32_MIN} to ${I32_MAX}`,
+        severity: 'error',
+      };
+    }
+    return { isValid: true };
   }
 
-  return { isValid: true };
+  return {
+    isValid: false,
+    message: `Invalid adjustment: '${value}'. Expected a whole number, or a percentage such as '10%'`,
+    severity: 'error',
+  };
 }
 
 function validateDuration(value: string): ValidationResult {
