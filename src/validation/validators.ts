@@ -16,6 +16,20 @@ const NAMED_COLORS = new Set([
 
 const BOOLEAN_VALUES = new Set(['true', 'false', 'yes', 'no', 'on', 'off']);
 
+// Ghostty parses integer options with Zig's parseInt at base 0, which accepts
+// 0x/0o/0b prefixes and _ digit separators. Floats go through parseFloat.
+const INTEGER_REGEX =
+  /^[+-]?(?:0[xX][0-9a-fA-F](?:_?[0-9a-fA-F])*|0[oO][0-7](?:_?[0-7])*|0[bB][01](?:_?[01])*|\d(?:_?\d)*)$/;
+const DECIMAL_REGEX = /^[+-]?(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d+)?$/;
+
+/** Resolves a value already matched by INTEGER_REGEX or DECIMAL_REGEX. */
+function numericValue(value: string): number {
+  const normalised = value.replace(/_/g, '');
+  const negative = normalised.startsWith('-');
+  const magnitude = Number(normalised.replace(/^[+-]/, ''));
+  return negative ? -magnitude : magnitude;
+}
+
 export function validateValue(
   schema: GhosttySchema,
   key: string,
@@ -73,14 +87,26 @@ export function validateBoolean(value: string): ValidationResult {
 }
 
 export function validateNumber(value: string, option?: ConfigOption): ValidationResult {
-  const num = parseFloat(value);
-  if (isNaN(num)) {
+  const literals = option?.allowedLiterals;
+  if (literals?.includes(value)) {
+    return { isValid: true };
+  }
+
+  const isInteger = option?.integer === true;
+  // parseFloat/parseInt ignore trailing text, so '50MB' would otherwise pass.
+  if (!(isInteger ? INTEGER_REGEX : DECIMAL_REGEX).test(value)) {
+    const kind = isInteger ? 'whole number' : 'number';
+    const expected = literals?.length
+      ? `. Expected a ${kind} or one of: ${literals.join(', ')}`
+      : `. Expected a ${kind}`;
     return {
       isValid: false,
-      message: `Invalid number: '${value}'`,
+      message: `Invalid value: '${value}'${expected}`,
       severity: 'error',
     };
   }
+
+  const num = numericValue(value);
 
   if (option) {
     if (option.minimum !== undefined && num < option.minimum) {
@@ -238,14 +264,16 @@ function validatePath(value: string): ValidationResult {
 }
 
 function validatePercentage(value: string): ValidationResult {
-  // Can be a number or number with %
-  const cleanValue = value.endsWith('%') ? value.slice(0, -1) : value;
-  const num = parseFloat(cleanValue);
+  // Ghostty's Metrics.Modifier reads a trailing % as a float delta, and any
+  // other value as a base-10 integer.
+  const valid = value.endsWith('%')
+    ? DECIMAL_REGEX.test(value.slice(0, -1))
+    : /^[+-]?\d+$/.test(value);
 
-  if (isNaN(num)) {
+  if (!valid) {
     return {
       isValid: false,
-      message: `Invalid percentage/number: '${value}'`,
+      message: `Invalid adjustment: '${value}'. Expected a whole number, or a percentage such as '10%'`,
       severity: 'error',
     };
   }
@@ -254,15 +282,19 @@ function validatePercentage(value: string): ValidationResult {
 }
 
 function validateDuration(value: string): ValidationResult {
-  // Duration format: number with optional unit (y, d, h, m, s, ms, us, µs, ns)
-  const durationRegex = /^-?\d+(\.\d+)?(y|d|h|m|s|ms|us|µs|ns)?$/;
-  if (durationRegex.test(value)) {
+  // Ghostty consumes <unsigned><unit> components in a loop, so '1h30m' is one
+  // duration. Units must follow their number directly; ms/µs/us/ns come first
+  // in the alternation so 'm' does not win against 'ms'.
+  const durationRegex = /^(?:\d+(?:ms|µs|us|ns|y|w|d|h|m|s)\s*)+$/;
+
+  // A bare number is only valid when it is zero, where the unit is unambiguous.
+  if (value === '0' || durationRegex.test(value)) {
     return { isValid: true };
   }
 
   return {
     isValid: false,
-    message: `Invalid duration: '${value}'. Expected number with optional unit (s, ms, etc.)`,
+    message: `Invalid duration: '${value}'. Expected a whole number with a unit (y, w, d, h, m, s, ms, us, ns), such as '500ms' or '1h30m'`,
     severity: 'error',
   };
 }

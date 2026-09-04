@@ -17,6 +17,10 @@ export interface ConfigOption {
   platforms?: Platform[];
   minimum?: number;
   maximum?: number;
+  /** Non-numeric values a numeric option also accepts, e.g. 'unlimited'. */
+  allowedLiterals?: string[];
+  /** Reject fractional values and unit suffixes; Ghostty parses these with parseInt. */
+  integer?: boolean;
   pattern?: string;
   default?: string;
 }
