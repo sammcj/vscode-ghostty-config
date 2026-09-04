@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { GhosttySchema } from '../types';
 import { parseLine } from '../parser/configParser';
+import { findKeybindSeparator } from '../parser/keybindParser';
 
 export class GhosttyHoverProvider implements vscode.HoverProvider {
   constructor(private schema: GhosttySchema) {}
@@ -184,7 +185,7 @@ export class GhosttyHoverProvider implements vscode.HoverProvider {
       return new vscode.Hover(md);
     }
 
-    const equalsIndex = value.indexOf('=');
+    const equalsIndex = findKeybindSeparator(value);
     if (equalsIndex === -1) {
       md.appendMarkdown(`⚠️ **Invalid keybind format**\n\n`);
       md.appendMarkdown(`Expected: \`[prefix:]trigger=action[:param]\``);

@@ -27,6 +27,24 @@ const flagSchema: GhosttySchema = {
   },
 };
 
+const keybindSchema: GhosttySchema = {
+  version: 'test',
+  description: 'test',
+  types: {
+    keybind: {
+      description: '',
+      actions: ['equalize_splits', 'text'],
+    },
+  },
+  repeatableKeys: ['keybind'],
+  options: {
+    keybind: {
+      type: 'keybind',
+      description: '',
+    },
+  },
+};
+
 suite('Validators', () => {
   suite('validateColor', () => {
     test('accepts 6-digit hex colours', () => {
@@ -139,6 +157,25 @@ suite('Validators', () => {
 
     test('does not split plain enums on commas', () => {
       assert.strictEqual(check('block,bar'), false);
+    });
+  });
+
+  suite('keybind validation', () => {
+    const check = (value: string) =>
+      validateValue(keybindSchema, 'keybind', value);
+
+    test('accepts a literal equals key in the trigger', () => {
+      assert.strictEqual(check('super+shift+==equalize_splits').isValid, true);
+    });
+
+    test('keeps equals signs in action parameters', () => {
+      assert.strictEqual(check('ctrl+a=text:foo=bar').isValid, true);
+    });
+
+    test('still rejects unknown actions', () => {
+      const result = check('ctrl+a=not_an_action');
+      assert.strictEqual(result.isValid, false);
+      assert.strictEqual(result.message, "Unknown keybind action: 'not_an_action'");
     });
   });
 });
