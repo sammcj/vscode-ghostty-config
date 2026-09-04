@@ -183,12 +183,24 @@ suite('Validators', () => {
       assert.strictEqual(validateNumber('1e1_0', option).isValid, true);
     });
 
-    test('skips range checks for values with no finite bound', () => {
+    test('skips range checks only for inf and nan', () => {
       // Ghostty accepts these, so flagging them against a bound would be a
-      // false positive.
+      // false positive. Everything else must still be bounded.
       const option: ConfigOption = { type: 'number', description: '', minimum: 0, maximum: 1 };
       assert.strictEqual(validateNumber('inf', option).isValid, true);
+      assert.strictEqual(validateNumber('nan', option).isValid, true);
       assert.strictEqual(validateNumber('2', option).isValid, false);
+      // Overflows a double, so it resolves to Infinity and exceeds the bound.
+      assert.strictEqual(validateNumber('1e400', option).isValid, false);
+    });
+
+    test('bounds hex floats by their decoded value', () => {
+      const option: ConfigOption = { type: 'number', description: '', minimum: 0, maximum: 1 };
+      assert.strictEqual(validateNumber('0x1p0', option).isValid, true); // 1
+      assert.strictEqual(validateNumber('0x0.8p0', option).isValid, true); // 0.5
+      assert.strictEqual(validateNumber('0x2p0', option).isValid, false); // 2
+      assert.strictEqual(validateNumber('0x1.8p1', option).isValid, false); // 3
+      assert.strictEqual(validateNumber('-0x1p0', option).isValid, false); // -1
     });
 
     test('rejects trailing text on non-integer options', () => {

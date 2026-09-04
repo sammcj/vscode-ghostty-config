@@ -68,15 +68,43 @@ function boundAsBigInt(bound: number | string): bigint | null {
 }
 
 /**
- * Resolves an already shape-checked value, or null when it has no finite
- * value to compare against a bound (inf/nan, or a hex float).
+ * Decodes a Zig hex float. `Number` handles a bare `0x` integer but returns
+ * NaN once there is a hex fraction or a `p` exponent.
+ */
+function hexFloatValue(unsigned: string): number | null {
+  const parts = /^0[xX]([0-9a-fA-F]*)(?:\.([0-9a-fA-F]*))?(?:[pP]([+-]?\d+))?$/.exec(unsigned);
+  if (!parts) {
+    return null;
+  }
+
+  const [, whole, fraction = '', exponent = '0'] = parts;
+  if (whole === '' && fraction === '') {
+    return null;
+  }
+
+  let mantissa = whole === '' ? 0 : parseInt(whole, 16);
+  for (let i = 0; i < fraction.length; i++) {
+    mantissa += parseInt(fraction[i], 16) / 16 ** (i + 1);
+  }
+  return mantissa * 2 ** Number(exponent);
+}
+
+/**
+ * Resolves an already shape-checked value, or null for inf/nan, which Ghostty
+ * accepts and which no bound meaningfully constrains. A value that overflows a
+ * double still resolves to Infinity so that bounds reject it.
  */
 function numericValue(value: string): number | null {
   const normalised = value.replace(/_/g, '');
-  const negative = normalised.startsWith('-');
-  const magnitude = Number(normalised.replace(/^[+-]/, ''));
+  if (NON_FINITE_REGEX.test(normalised)) {
+    return null;
+  }
 
-  if (!Number.isFinite(magnitude)) {
+  const negative = normalised.startsWith('-');
+  const unsigned = normalised.replace(/^[+-]/, '');
+  const magnitude = HEX_FLOAT_REGEX.test(unsigned) ? hexFloatValue(unsigned) : Number(unsigned);
+
+  if (magnitude === null || Number.isNaN(magnitude)) {
     return null;
   }
   return negative ? -magnitude : magnitude;
