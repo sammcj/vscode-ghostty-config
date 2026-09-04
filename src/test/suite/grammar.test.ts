@@ -114,6 +114,59 @@ suite('TextMate grammar', () => {
     assert.strictEqual(index, patterns.length - 1, 'catch-all pattern must come last');
   });
 
+  test('lists the same keybind actions as the schema', () => {
+    const schema = loadSchemaFromPath(schemaPath);
+    const grammar = JSON.parse(fs.readFileSync(grammarPath, 'utf8'));
+    const match: string = grammar.repository['keybind-action'].patterns[0].match;
+    const alternation = /^\\b\((.+)\)\\b$/.exec(match);
+
+    assert.ok(alternation, 'keybind action pattern is not a plain alternation');
+    assert.deepStrictEqual(
+      [...new Set(alternation[1].split('|'))].sort(),
+      [...schema.types['keybind'].actions ?? []].sort()
+    );
+  });
+
+  test('scopes keybind values without stealing other values containing =', async () => {
+    const grammar = await loadGrammar();
+    const scopesAt = (line: string, index: number) =>
+      grammar
+        .tokenizeLine(line, textmate.INITIAL)
+        .tokens.filter((t) => t.startIndex <= index && t.endIndex > index)
+        .flatMap((t) => t.scopes);
+
+    // A keybind trigger and action still resolve, including a literal = key.
+    const keybind = 'keybind = super+shift+==equalize_splits';
+    assert.ok(
+      scopesAt(keybind, keybind.indexOf('+')).includes('keyword.operator.plus.ghostty'),
+      'expected the trigger separator to be scoped'
+    );
+    assert.ok(
+      scopesAt(keybind, keybind.indexOf('equalize_splits')).includes('support.function.action.ghostty'),
+      'expected the action after a literal = trigger to be scoped'
+    );
+
+    // palette entries contain an = but are not keybinds, so #keybind-value
+    // must not claim them and swallow the colour.
+    const palette = 'palette = 0=#000000';
+    assert.ok(
+      scopesAt(palette, palette.indexOf('#000000')).includes('constant.other.color.hex.ghostty'),
+      'expected the palette colour to keep its colour scope'
+    );
+  });
+
+  test('scopes the keybind clear directive', async () => {
+    const grammar = await loadGrammar();
+    const tokens = grammar.tokenizeLine('keybind = clear', textmate.INITIAL).tokens;
+    const clear = tokens.find((t) => t.startIndex === 10);
+
+    assert.ok(clear?.scopes.includes('keyword.control.ghostty'));
+    assert.ok(
+      tokens[0].scopes.includes('variable.other.property.keybind.ghostty'),
+      'the key should still be scoped as a config key'
+    );
+  });
+
   test('tokenises every schema key to its category scope', async () => {
     const schema = loadSchemaFromPath(schemaPath);
     const grammar = await loadGrammar();
