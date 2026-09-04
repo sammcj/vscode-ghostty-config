@@ -119,7 +119,7 @@
     "mocha": "^11.7.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vscode-oniguruma": "2.0.1",
-    "vscode-textmate": "9.3.2"
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   }
 }

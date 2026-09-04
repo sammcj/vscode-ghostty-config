@@ -1,11 +1,13 @@
 import * as assert from 'assert';
+import * as path from 'path';
+import { loadSchemaFromPath } from '../../schema/loader';
 import {
   validateColor,
   validateBoolean,
   validateNumber,
   validateValue,
 } from '../../validation/validators';
-import { GhosttySchema } from '../../types';
+import { ConfigOption, GhosttySchema } from '../../types';
 
 const flagSchema: GhosttySchema = {
   version: 'test',
@@ -110,6 +112,110 @@ suite('Validators', () => {
     test('rejects non-numbers', () => {
       assert.strictEqual(validateNumber('abc').isValid, false);
     });
+
+    test('accepts allowed literals such as unlimited', () => {
+      const option: ConfigOption = {
+        type: 'number',
+        description: '',
+        minimum: 0,
+        allowedLiterals: ['unlimited'],
+      };
+      assert.strictEqual(validateNumber('unlimited', option).isValid, true);
+      assert.strictEqual(validateNumber('50000000', option).isValid, true);
+
+      const bad = validateNumber('boundless', option);
+      assert.strictEqual(bad.isValid, false);
+      assert.ok(bad.message?.includes('unlimited'));
+    });
+
+    test('rejects fractions and unit suffixes for integer options', () => {
+      const option: ConfigOption = {
+        type: 'number',
+        description: '',
+        minimum: 0,
+        integer: true,
+        allowedLiterals: ['unlimited'],
+      };
+      assert.strictEqual(validateNumber('50000000', option).isValid, true);
+      assert.strictEqual(validateNumber('unlimited', option).isValid, true);
+      assert.strictEqual(validateNumber('50MB', option).isValid, false);
+      assert.strictEqual(validateNumber('1.5', option).isValid, false);
+    });
+
+    test('accepts the base-0 integer forms Ghostty parses', () => {
+      const option: ConfigOption = { type: 'number', description: '', integer: true };
+      assert.strictEqual(validateNumber('0x4000000', option).isValid, true);
+      assert.strictEqual(validateNumber('0o17', option).isValid, true);
+      assert.strictEqual(validateNumber('0b1010', option).isValid, true);
+      assert.strictEqual(validateNumber('50_000_000', option).isValid, true);
+      assert.strictEqual(validateNumber('0xZZ', option).isValid, false);
+    });
+
+    test('range checks understand base-0 forms', () => {
+      const option: ConfigOption = {
+        type: 'number',
+        description: '',
+        integer: true,
+        minimum: 100,
+      };
+      // parseFloat would read 0x1F as 0 and wrongly report it below minimum.
+      assert.strictEqual(validateNumber('0x1F', option).isValid, false);
+      assert.strictEqual(validateNumber('0xFF', option).isValid, true);
+      assert.strictEqual(validateNumber('1_000', option).isValid, true);
+    });
+
+    test('enforces minimum and maximum', () => {
+      const option: ConfigOption = { type: 'number', description: '', minimum: 1, maximum: 10 };
+      assert.strictEqual(validateNumber('5', option).isValid, true);
+      assert.strictEqual(validateNumber('0', option).isValid, false);
+
+      const tooBig = validateNumber('11', option);
+      assert.strictEqual(tooBig.isValid, false);
+      assert.ok(tooBig.message?.includes('above maximum 10'));
+    });
+
+    test('rejects trailing text on non-integer options', () => {
+      const option: ConfigOption = { type: 'number', description: '' };
+      assert.strictEqual(validateNumber('1.5', option).isValid, true);
+      assert.strictEqual(validateNumber('1e3', option).isValid, true);
+      assert.strictEqual(validateNumber('.5', option).isValid, true);
+      assert.strictEqual(validateNumber('12pt', option).isValid, false);
+      assert.strictEqual(validateNumber('0.9abc', option).isValid, false);
+    });
+  });
+
+  // The loader casts parsed JSON with `as GhosttySchema` and does no runtime
+  // checking, so a typo in the schema would only show up here.
+  suite('real schema', () => {
+    const schema = loadSchemaFromPath(
+      path.join(__dirname, '../../../schema/ghostty-config-syntax.schema.json')
+    );
+    const check = (key: string, value: string) => validateValue(schema, key, value);
+
+    test('accepts unlimited on the Limit-typed options', () => {
+      assert.strictEqual(check('scrollback-limit-bytes', 'unlimited').isValid, true);
+      assert.strictEqual(check('scrollback-limit-lines', 'unlimited').isValid, true);
+      assert.strictEqual(check('clipboard-write-limit-bytes', 'unlimited').isValid, true);
+      assert.strictEqual(check('scrollback-limit', 'unlimited').isValid, true);
+    });
+
+    test('rejects sizes and fractions on integer options', () => {
+      assert.strictEqual(check('scrollback-limit-bytes', '50MB').isValid, false);
+      assert.strictEqual(check('scrollback-limit-lines', '1.5').isValid, false);
+      assert.strictEqual(check('window-width', '80.5').isValid, false);
+    });
+
+    test('still accepts fractions on float options', () => {
+      assert.strictEqual(check('font-size', '13.5').isValid, true);
+      assert.strictEqual(check('background-opacity', '0.9').isValid, true);
+    });
+
+    test('accepts the refreshed enum values', () => {
+      assert.strictEqual(check('copy-on-select', 'both').isValid, true);
+      assert.strictEqual(check('middle-click-action', 'clipboard-paste').isValid, true);
+      assert.strictEqual(check('drag-handle', 'never').isValid, true);
+      assert.strictEqual(check('keybind', 'ctrl+t=set_window_title').isValid, true);
+    });
   });
 
   suite('flag-set enum validation', () => {
@@ -176,6 +282,96 @@ suite('Validators', () => {
       const result = check('ctrl+a=not_an_action');
       assert.strictEqual(result.isValid, false);
       assert.strictEqual(result.message, "Unknown keybind action: 'not_an_action'");
+    });
+
+    test('rejects a keybind with no action separator', () => {
+      const result = check('ctrl+a');
+      assert.strictEqual(result.isValid, false);
+      assert.ok(result.message?.includes('Invalid keybind format'));
+    });
+
+    test('rejects an empty trigger or action', () => {
+      assert.strictEqual(check('=copy_to_clipboard').message, 'Keybind trigger cannot be empty');
+      assert.strictEqual(check('ctrl+a=').message, 'Keybind action cannot be empty');
+    });
+
+    test('accepts the clear directive and prefixed binds', () => {
+      assert.strictEqual(check('clear').isValid, true);
+      assert.strictEqual(check('global:ctrl+a=text').isValid, true);
+    });
+  });
+
+  // Ghostty parses these in a loop of <unsigned><unit> components, so the
+  // shape is stricter and more permissive than a single number plus a suffix.
+  suite('duration validation', () => {
+    const schema: GhosttySchema = {
+      version: 'test',
+      description: 'test',
+      types: {},
+      repeatableKeys: [],
+      options: { 'undo-timeout': { type: 'duration', description: '' } },
+    };
+    const check = (value: string) => validateValue(schema, 'undo-timeout', value);
+
+    test('accepts a single component', () => {
+      assert.strictEqual(check('500ms').isValid, true);
+      assert.strictEqual(check('5s').isValid, true);
+      assert.strictEqual(check('2w').isValid, true);
+      assert.strictEqual(check('1ns').isValid, true);
+      assert.strictEqual(check('3µs').isValid, true);
+    });
+
+    test('accepts compound durations', () => {
+      assert.strictEqual(check('1h30m').isValid, true);
+      assert.strictEqual(check('1d12h30m15s').isValid, true);
+      assert.strictEqual(check('1m 30s').isValid, true);
+    });
+
+    test('distinguishes m from ms', () => {
+      assert.strictEqual(check('5m').isValid, true);
+      assert.strictEqual(check('5ms').isValid, true);
+    });
+
+    test('accepts a bare zero only', () => {
+      assert.strictEqual(check('0').isValid, true);
+      assert.strictEqual(check('500').isValid, false);
+    });
+
+    test('rejects negatives, fractions and unknown units', () => {
+      assert.strictEqual(check('-5s').isValid, false);
+      assert.strictEqual(check('1.5s').isValid, false);
+      assert.strictEqual(check('5years').isValid, false);
+      assert.strictEqual(check('1 h').isValid, false);
+      assert.strictEqual(check('abc').isValid, false);
+    });
+  });
+
+  suite('percentage validation', () => {
+    const schema: GhosttySchema = {
+      version: 'test',
+      description: 'test',
+      types: {},
+      repeatableKeys: [],
+      options: { 'adjust-cell-width': { type: 'percentage', description: '' } },
+    };
+    const check = (value: string) => validateValue(schema, 'adjust-cell-width', value);
+
+    test('accepts whole numbers and percentages', () => {
+      assert.strictEqual(check('1').isValid, true);
+      assert.strictEqual(check('-2').isValid, true);
+      assert.strictEqual(check('10%').isValid, true);
+      assert.strictEqual(check('-12.5%').isValid, true);
+    });
+
+    test('rejects fractions without a percent sign', () => {
+      // Metrics.Modifier parses the bare form with parseInt, not parseFloat.
+      assert.strictEqual(check('1.5').isValid, false);
+    });
+
+    test('rejects trailing text', () => {
+      assert.strictEqual(check('10px').isValid, false);
+      assert.strictEqual(check('abc').isValid, false);
+      assert.strictEqual(check('%').isValid, false);
     });
   });
 });
